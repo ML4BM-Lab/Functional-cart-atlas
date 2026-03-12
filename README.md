@@ -57,6 +57,11 @@ Together, these resources ensure full reproducibility and facilitate the extensi
 | 🧠 **scVI-hub pretrained model** | [https://huggingface.co/sergiocamarap/Functional-cart-atlas-model](https://huggingface.co/sergiocamarap/Functional-cart-atlas-model) |
 | 💻 **Interactive ShinyCell app** | [https://wholebioinfo.shinyapps.io/shinyatlas/](https://wholebioinfo.shinyapps.io/shinyatlas/) |
 
+## 🧪 Demo dataset
+To facilitate testing and demonstration of the code provided in this repository, we include a small demo dataset (`Atlas_DEMO.h5ad`) containing 1,000 randomly selected cells from the final version of the atlas.
+
+This demo object is intended exclusively for software demonstration and reproducibility purposes, allowing users to run example workflows without downloading the full atlas dataset.
+
 ## ✍🏻 Citation
 
 If you use this repository, please cite:
