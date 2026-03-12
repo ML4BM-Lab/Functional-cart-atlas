@@ -67,7 +67,7 @@ bioRxiv 2025.10.11.681788; doi: https://doi.org/10.1101/2025.10.11.681788
 
 ## ⚙️ Environment and Reproducibility
 
-All analyses were conducted using **Python (v3.8.10)** and **R (v4.5.1 / v4.1.3)**.  
+All analyses were conducted using **Python (v3.8.10)** and **R (v4.5.1 / v4.1.3)** under **Ubuntu (20.04.6 LTS / 20.04.4 LTS)**.  
 Package versions are listed below as referenced in the *Online Methods* section of the manuscript:
 
 ### R packages
