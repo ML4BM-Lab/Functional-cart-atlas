@@ -88,3 +88,4 @@ Package versions are listed below as referenced in the *Online Methods* section 
 - **milopy** v0.1.1  
 - **scArches** v0.6.1  
 - **scProportionTest** v0.1.2
+- **Palantir** v1.3.6
