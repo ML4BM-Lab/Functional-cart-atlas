@@ -9,12 +9,9 @@ Sergio Cámara-Peña*, Paula Rodríguez-Márquez*, Nuria Planell, María E. Call
 
 ## 📖 Abstract
 
-We built a **CAR-T cell functional atlas** from over one million cells across 13 studies, integrating data from patients and healthy donors.  
-The atlas captures **11 phenotypes**, links **infusion product composition** with **clinical response**, and reveals **sex- and age-dependent effects**, **metabolic signatures**, and **rare ICANS-associated populations**.  
-This open-access resource provides a foundation to understand CAR-T cell function and guide the rational design of next-generation therapies.  
+We built a **CAR-T cell functional atlas** from over one million cells across 13 studies, integrating data from patients and healthy donors. The atlas captures **11 phenotypes**, links **infusion product composition** with **clinical response**, and reveals **sex- and age-dependent effects**, **metabolic signatures**, and **rare ICANS-associated populations**. This open-access resource provides a foundation to understand CAR-T cell function and guide the rational design of next-generation therapies.  
 
-The code provided in this repository enables full reproduction of the **CAR-T Cell Atlas**, from raw data preprocessing to integration, annotation, visualization, and public dissemination through a **ShinyCell** app, **scVI-hub**, and **UCSC Cell Browser**.  
-Together, these resources ensure full reproducibility and facilitate the extension of the atlas to incorporate future CAR-T datasets.
+The code provided in this repository enables full reproduction of the **CAR-T Cell Atlas**, from raw data preprocessing to integration, annotation, visualization, and public dissemination through a **ShinyCell** app, **scVI-hub**, and **UCSC Cell Browser**. Together, these resources ensure full reproducibility and facilitate the extension of the atlas to incorporate future CAR-T datasets.
 
 ## 🗄️ Repository Structure
 
