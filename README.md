@@ -13,7 +13,7 @@ We built a **CAR-T cell functional atlas** from over one million cells across 13
 The atlas captures **11 phenotypes**, links **infusion product composition** with **clinical response**, and reveals **sex- and age-dependent effects**, **metabolic signatures**, and **rare ICANS-associated populations**.  
 This open-access resource provides a foundation to understand CAR-T cell function and guide the rational design of next-generation therapies.  
 
-The code provided in this repository enables full reproduction of the **CAR-T Cell Atlas**, from raw data preprocessing to integration, annotation, visualization, and public dissemination through a **ShinyCell** app and **scVI-hub**.  
+The code provided in this repository enables full reproduction of the **CAR-T Cell Atlas**, from raw data preprocessing to integration, annotation, visualization, and public dissemination through a **ShinyCell** app, **scVI-hub**, and **UCSC Cell Browser**.  
 Together, these resources ensure full reproducibility and facilitate the extension of the atlas to incorporate future CAR-T datasets.
 
 ## 🗄️ Repository Structure
@@ -29,10 +29,10 @@ Together, these resources ensure full reproducibility and facilitate the extensi
 └─ Code used to generate all figures and tables for the manuscript (main and supplementary).
 
 4_New_Data_Integration/
-└─ Workflow to incorporate new datasets into the atlas (from data preprocessing to scArches-scANVI model transfer - *Example with Jordana's dataset*).
+└─ Workflow to incorporate new datasets into the atlas (from data preprocessing to scArches-scANVI model transfer - Example with Jordana's dataset).
 
 5_Atlas_Sharing/
-└─ Scripts and configurations for atlas distribution resources (ShinyCell app, scVI-hub model).
+└─ Scripts and configurations for atlas distribution resources (ShinyCell app, scVI-hub model, UCSC Cell Browser).
 ```
 
 ## 👀 Overview
@@ -54,8 +54,11 @@ Together, these resources ensure full reproducibility and facilitate the extensi
 | Resource | Link |
 |-----------|------|
 | 🧬 **Zenodo (Atlas raw data)** | [https://doi.org/10.5281/zenodo.17213452](https://doi.org/10.5281/zenodo.17213452) |
-| 🧠 **scVI-hub pretrained model** | [https://huggingface.co/sergiocamarap/Functional-cart-atlas-model](https://huggingface.co/sergiocamarap/Functional-cart-atlas-model) |
+| 🧠 **scVI-hub pretrained model*** | [https://huggingface.co/sergiocamarap/Functional-cart-atlas-model](https://huggingface.co/sergiocamarap/Functional-cart-atlas-model) |
 | 💻 **Interactive ShinyCell app** | [https://wholebioinfo.shinyapps.io/shinyatlas/](https://wholebioinfo.shinyapps.io/shinyatlas/) |
+| 🔎 **UCSC Cell Browser** | [https://cells.ucsc.edu/?ds=car-t-atlas](https://cells.ucsc.edu/?ds=car-t-atlas) |
+
+\* A template script to easily download the pretrained scVI model is available in `5_Atlas_Sharing/scVI-hub/scVI-hub_Download.py`.
 
 ## 🧪 Demo dataset
 To facilitate testing and demonstration of the code provided in this repository, we include a small demo dataset (`Atlas_DEMO.h5ad`) containing 1,000 randomly selected cells from the final version of the atlas.
