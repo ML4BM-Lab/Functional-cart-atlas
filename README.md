@@ -53,7 +53,7 @@ The code provided in this repository enables full reproduction of the **CAR-T Ce
 | 🧬 **Zenodo (Atlas raw data)** | [https://doi.org/10.5281/zenodo.17213452](https://doi.org/10.5281/zenodo.17213452) |
 | 🧠 **scVI-hub pretrained model*** | [https://huggingface.co/sergiocamarap/Functional-cart-atlas-model](https://huggingface.co/sergiocamarap/Functional-cart-atlas-model) |
 | 💻 **Interactive ShinyCell app** | [https://wholebioinfo.shinyapps.io/shinyatlas/](https://wholebioinfo.shinyapps.io/shinyatlas/) |
-| 🔎 **UCSC Cell Browser** | [https://cells.ucsc.edu/?ds=car-t-atlas](https://cells.ucsc.edu/?ds=car-t-atlas) |
+| 🔎 **UCSC Cell Browser** | [https://car-t-atlas.cells.ucsc.edu](https://car-t-atlas.cells.ucsc.edu) |
 
 \* A template script to easily download the pretrained scVI model is available in `5_Atlas_Sharing/scVI-hub/scVI-hub_Download.py`.
 
