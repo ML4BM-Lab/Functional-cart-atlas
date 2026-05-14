@@ -76,21 +76,26 @@ All analyses were conducted using **Python (v3.8.10)** and **R (v4.5.1 / v4.1.3)
 Package versions are listed below as referenced in the *Online Methods* section of the manuscript:
 
 ### R packages
-- **Seurat** v4.3.0.1  
-- **DoubletFinder** v2.0.3  
-- **DropletUtils** v1.14.2  
-- **SeuratDisk** v0.0.0.9020  
-- **dreamlet** v1.0.3  
-- **zenith** v1.4.2  
-- **clusterProfiler** v4.2.2  
-- **AUCell** v1.30.1  
-- **ShinyCell** v2.1.0  
+- **Seurat** v4.3.0.1
+- **DoubletFinder** v2.0.3
+- **DropletUtils** v1.14.2
+- **SeuratDisk** v0.0.0.9020
+- **dreamlet** v1.6.0
+- **zenith** v1.10.0
+- **clusterProfiler** v4.16.0 / v4.2.2
+- **AUCell** v1.30.1
+- **ShinyCell** v2.1.0
 
 ### Python packages
-- **scvi-tools (scVI)** v0.20.3  
-- **scGraph** v0.1.2  
-- **Scanpy** v1.9.5  
-- **milopy** v0.1.1  
-- **scArches** v0.6.1  
+- **scvi-tools (scVI)** v0.20.3
+- **scGraph** v0.1.2
+- **scanpy** v1.9.8 / v1.9.5
+- **milopy** v0.1.1
+- **scArches** v0.6.1
 - **scProportionTest** v0.1.2
-- **Palantir** v1.3.6
+- **palantir** v1.3.6
+- **anndata** v0.9.2
+- **mudata** v0.2.3
+- **numpy** v1.24.4 / v1.23.5
+- **pandas** v2.0.3 / v1.5.1
+- **scib-metrics** v0.3.3
