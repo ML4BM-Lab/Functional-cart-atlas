@@ -4,7 +4,8 @@
 # Program: 2.2_Celltypist_annotation.py
 # Author: Sergio Cámara Peña
 # Date: 04/09/2023
-# Version: V4
+# Version: FINAL
+# Machine: Margaret
 
 ###############################################################################
 ###############################################################################

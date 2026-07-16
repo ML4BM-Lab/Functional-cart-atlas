@@ -4,7 +4,8 @@
 # Program: Dreamlet_IP_comparison.R
 # Author: Sergio Cámara Peña
 # Date: 22/01/2025
-# Version: V4
+# Version: FINAL
+# Machine: Rocinante
 
 ###############################################################################
 ###############################################################################

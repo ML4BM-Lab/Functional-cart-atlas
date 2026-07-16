@@ -4,7 +4,8 @@
 # Program: Supplementary_S4D.R
 # Author: Nuria Planell - Sergio Cámara Peña
 # Date: 30/09/2025
-# Version: V FINAL
+# Version: FINAL
+# Machine: Margaret
 
 ###############################################################################
 ###############################################################################

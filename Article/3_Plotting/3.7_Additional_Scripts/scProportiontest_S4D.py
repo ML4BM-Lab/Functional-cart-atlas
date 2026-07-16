@@ -4,7 +4,8 @@
 # Program: scProportiontest_S4D.py
 # Author: Sergio Cámara Peña
 # Date: 30/09/2025
-# Version: V FINAL
+# Version: FINAL
+# Machine: Margaret
 
 ###############################################################################
 ###############################################################################
