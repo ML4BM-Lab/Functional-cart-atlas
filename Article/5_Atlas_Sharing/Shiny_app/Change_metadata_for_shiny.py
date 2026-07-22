@@ -10,13 +10,55 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 # %% Import libraries
 import os
 import scanpy as sc
 
 # %% Read files
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Raw_Atlas")
-adata_V4 = sc.read_h5ad("Python_scVI_adata_big_V4_state4_Normalized.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas')
+adata_V4 = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_big_V4_state4_Normalized.h5ad"))
 
 # %% Change metadata columns
 adata_V4.obs.rename(columns={'ScFv': 'CAR_Type'}, inplace=True)
@@ -51,7 +93,7 @@ for key in ["distances"]:
         del adata_V4.obsp[key]
 
 # %% Save files
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Shiny_app")
-adata_V4.write("Python_scVI_adata_big_V4_state4_Normalized_for_shiny.h5ad")
+_current_dir = Path(project_dir / 'Shiny_app')
+adata_V4.write(_output_path(_current_dir, "Python_scVI_adata_big_V4_state4_Normalized_for_shiny.h5ad"))
 
 # %% End of script

@@ -10,8 +10,51 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+import sys
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 ##### Use scVI in its Python version #####
-## Performed following these two tutorials: https://ccbskillssem.github.io/assets/scvi_notebook.html y https://docs.scvi-tools.org/en/stable/tutorials/notebooks/harmonization.html
+## Performed following these two tutorials: https://ccbskillssem.github.io/assets/scvi_notebook.html and https://docs.scvi-tools.org/en/stable/tutorials/notebooks/harmonization.html
 ## Youtube video with more info: https://www.youtube.com/watch?v=YT9qTuF6YFk&ab_channel=Sanbomics
 ## Colab notebook: https://colab.research.google.com/github/yoseflab/scvi_tutorials/blob/0.14.5/api_overview.ipynb#scrollTo=QXIxM_VgqovL
 
@@ -43,7 +86,7 @@ random.seed(2504)
 # %% Read the data
 if Train:
     adata = sc.read(
-        "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Python-Celltypist/V4/Seurat_merged_With_Celltypist.h5ad"
+        _require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4' / 'Seurat_merged_With_Celltypist.h5ad')
     )
 
 # %% Create a layer with the counts - Is what scVI uses
@@ -105,15 +148,13 @@ if Train:
     model.train()
 
 # %% Save/Load trained model
-os.chdir(
-    "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4"
-)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
 
 if Train:
-    model.save("Atlas_integ_scVI_V4", overwrite=True, save_anndata=False)
+    model.save(_output_path(_current_dir, "Atlas_integ_scVI_V4"), overwrite=True, save_anndata=False)
     print("Saved successfully")
 else:
-    model = scvi.model.SCVI.load("Atlas_integ_scVI_V4")
+    model = scvi.model.SCVI.load(_input_path(_current_dir, "Atlas_integ_scVI_V4"))
     print("Loaded successfully")
 
 # %% Obtain latent representation from scVI to evaluate it
@@ -134,31 +175,32 @@ sc.tl.leiden(adata, key_added="leiden_Res_0.6", resolution=0.6)
 # 
 ######################################################################## 
 if Save_h5ad:
-    os.chdir(
-        "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4"
-    )
-    adata.write("Python_scVI_adata_V4_state1.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+    adata.write(_output_path(_current_dir, "Python_scVI_adata_V4_state1.h5ad"))
     print("Correctly saved")
 else:
-    os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-    adata = sc.read_h5ad("Python_scVI_adata_V4_state1.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+    adata = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state1.h5ad"))
     print("Correctly loaded")
 
 # %% I paused to check the resolutions using Clustree
 if False:
     import invoke
     import os
-    os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Codigo/Codigo_datasets_atlas/Datasets_Integration/Tests_labs")
-    CLUSTREE_SCRIPT = "Leiden_resol_lab_clustree_function.R"
-    ADATA_PATH = "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4/Python_scVI_adata_V4_state1.h5ad"
-    CLUSTREE_OUT = "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4/Clustree_resolutions/clustree.png"
+    _current_dir = Path(project_dir / 'Codigo' / 'Codigo_datasets_atlas' / 'Datasets_Integration' / 'Tests_labs')
+    if not _current_dir.is_dir():
+        raise FileNotFoundError(f"Required input directory does not exist: {_current_dir}")
+    sys.path.insert(0, str(_current_dir))
+    CLUSTREE_SCRIPT = _input_path(_current_dir, "Leiden_resol_lab_clustree_function.R")
+    ADATA_PATH = _require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4' / 'Python_scVI_adata_V4_state1.h5ad')
+    CLUSTREE_OUT = project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4' / 'Clustree_resolutions' / 'clustree.png'
     Carrera = invoke.run(f"Rscript {CLUSTREE_SCRIPT} {ADATA_PATH} {CLUSTREE_OUT}")
 # After examining the resulting graph, I decided to use resolution 0.3
 
 # %% UMAP plots save
-os.chdir(
-    "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_integ"
-)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_integ')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 Features_to_explore = [
     "celltypist_majority_voting",
     "leiden_Res_0.3",
@@ -175,19 +217,23 @@ for i in range(len(Features_to_explore)):
     sc.pl.umap(adata, color=feature_name, frameon=False, save=filename2)
 
 # %% Clustering QC Plots --- 4 QC parameters, dataset contribution to cluster, cluster composition by dataset, cell cycle
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_integ/figures")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_integ' / 'figures')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 cluster_props = get_cluster_proportions(adata, cluster_key="leiden_Res_0.3", sample_key="orig_ident")
 f1 = plot_cluster_proportions(cluster_props, xlabel_rotation=90, cluster_palette=sns.color_palette("hls", adata.obs["leiden_Res_0.3"].nunique()))
-f1.savefig("QC_Datasets_to_Cluster_distrib.pdf")
-f1.savefig("QC_Datasets_to_Cluster_distrib.png")
+f1.savefig(_output_path(_current_dir, "QC_Datasets_to_Cluster_distrib.pdf"))
+f1.savefig(_output_path(_current_dir, "QC_Datasets_to_Cluster_distrib.png"))
 
 cluster_props_2 = get_cluster_proportions(adata, cluster_key="orig_ident", sample_key="leiden_Res_0.3")
 f2 = plot_cluster_proportions(cluster_props_2, xlabel_rotation=90, cluster_palette=sns.color_palette("hls", adata.obs["orig_ident"].nunique()))
-f2.savefig("QC_Clusters_to_Dataset_distrib.pdf")
-f2.savefig("QC_Clusters_to_Dataset_distrib.png")
+f2.savefig(_output_path(_current_dir, "QC_Clusters_to_Dataset_distrib.pdf"))
+f2.savefig(_output_path(_current_dir, "QC_Clusters_to_Dataset_distrib.png"))
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_integ")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_integ')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 sc.pl.umap(adata, color="Phase", frameon=False, save="_QC_Cell_Cycle.pdf")
 sc.pl.umap(adata, color="Phase", frameon=False, save="_QC_Cell_Cycle.png")
 
@@ -202,15 +248,17 @@ print(cluster_counts_df)
 
 celltypist_count = pd.DataFrame(metadata["celltypist_majority_voting"].value_counts())
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4/Data")
-cluster_counts_df.to_csv("Counts_per_cluster.csv")
-celltypist_count.to_csv("Celltypist_counts.csv")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4' / 'Data')
+cluster_counts_df.to_csv(_output_path(_current_dir, "Counts_per_cluster.csv"))
+celltypist_count.to_csv(_output_path(_current_dir, "Celltypist_counts.csv"))
 
 # %% Finding marker genes by cluster
 sc.pp.log1p(adata) # Calling this function before ranking genes avoids the need to use the raw data and fixes the dictionary issue
 sc.tl.rank_genes_groups(adata, "leiden_Res_0.3", method="wilcoxon") # This function expects the data to be log-transformed
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_integ")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_integ')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False, save=".pdf")
 sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False, save=".png")
 
@@ -221,7 +269,7 @@ sc.pl.rank_genes_groups_stacked_violin(adata, n_genes=4, cmap='RdBu_r', groupby=
 # sc.pl.rank_genes_groups(adata, groups=['2'], n_genes=20)
 
 # %% Marker genes by cluster --- Table
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4/Data")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4' / 'Data')
 result = adata.uns['rank_genes_groups']
 groups = result['names'].dtype.names
 
@@ -230,7 +278,7 @@ Marker_genes_x_clus_df = pd.DataFrame(
     for group in groups for key in ['names', 'pvals']})
 
 Marker_genes_x_clus_df
-Marker_genes_x_clus_df.to_csv("Marker_genes_per_cluster.csv")
+Marker_genes_x_clus_df.to_csv(_output_path(_current_dir, "Marker_genes_per_cluster.csv"))
 
 #%% Load/Save state 2
 ########################################################################
@@ -239,18 +287,18 @@ Marker_genes_x_clus_df.to_csv("Marker_genes_per_cluster.csv")
 # 
 ######################################################################## 
 if Save_h5ad_2:
-    os.chdir(
-        "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4"
-    )
-    adata.write("Python_scVI_adata_V4_state2.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+    adata.write(_output_path(_current_dir, "Python_scVI_adata_V4_state2.h5ad"))
     print("Correctly saved")
 else:
-    os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-    adata = sc.read_h5ad("Python_scVI_adata_V4_state2.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+    adata = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state2.h5ad"))
     print("Correctly loaded")
 
 # %% Differential marker genes between clusters --- Plots
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_integ")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_integ')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 sc.pl.umap(adata, color=["CD4", "CD3D", "CD8A"], frameon=False, ncols=3, save="_marker_genes1.pdf") #ncols = nº of panels per row
 sc.pl.umap(adata, color=["CD4", "CD3D", "CD8A"], frameon=False, ncols=3, save="_marker_genes1.png")
@@ -258,7 +306,9 @@ sc.pl.umap(adata, color=["celltypist_majority_voting", "celltypist_conf_score"],
 sc.pl.umap(adata, color=["celltypist_majority_voting", "celltypist_conf_score"], frameon=False, ncols=2, save="_celltypist_confidence.png")
 
 #%% Cell type UMAPs
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_markers_exploration")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_markers_exploration')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 sc.pl.umap(adata, color=["CD4", "CD3D", "CD8A"], frameon=False, ncols=3, vmin=0, vmax="p99", save="0_Basic_Markers.png") # Basic Markers
 sc.pl.umap(adata, color=["CD8A", "CD8B"], frameon=False, ncols=3, vmin=0, vmax="p99", save="0.1_Basic_Markers_CD8.png") # Basic Markers (CD8+)
@@ -298,7 +348,9 @@ sc.pl.umap(adata, color=["CD3D", "CD3G", "CD3E"], frameon=False, ncols=2, vmin=0
 sc.pl.umap(adata, color=["TNFRSF17", "SDC1", "CD19"], frameon=False, ncols=2) # Study of residual cancer cells — It appears there are no residual cancer cells (TNFRSF17 = BCMA)
 
 #%% Cell type violins
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_markers_exploration")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_markers_exploration')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 sc.pl.violin(adata, keys=["CD4", "CD3D", "CD8A"], groupby='leiden_Res_0.3', stripplot=False, save="0_Basic_Markers.png") # Basic Markers
 sc.pl.violin(adata, keys=["CD19", "MS4A1", "CD79A"], groupby='leiden_Res_0.3', stripplot=False, save="1_B_Cell.png") # B cells
@@ -334,7 +386,9 @@ sc.pl.violin(adata, keys=["CD8A", "CD8B"], groupby='leiden_Res_0.3', stripplot=F
 sc.pl.violin(adata, keys=["CD3D", "CD3G", "CD3E"], groupby='leiden_Res_0.3', stripplot=False, save="27_CD3_Complex.png") # CD3 complex marker genes
 
 # %% Gen exploration -- Paula's choice
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_markers_exploration_2")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_markers_exploration_2')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 sc.pl.stacked_violin(adata, var_names=["CD3D", "CD4", "CD8A"], groupby='leiden_Res_0.3', title="Marcadores basicos de celulas T", save="1_Basic_T_markers.pdf") # 1. Basic markers of T cells
 sc.pl.stacked_violin(adata, var_names=["FOXP3", "IL2RA", "IL17A"], groupby='leiden_Res_0.3', title="Otros marcadores", save="2_Other_markers.pdf") # 2. Other markers
@@ -358,7 +412,9 @@ sc.pl.umap(adata, color=["TCF7", "CCR7", "SELL"], frameon=False, ncols=2, vmin=0
 sc.pl.umap(adata, color=["PTPRC"], frameon=False, ncols=2, vmin=0, vmax="p99", save="6_CD45.png") # 6. CD45
 
 # %% Extra QC --- Ribosomal and hemoglobin scoring
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_markers_exploration_3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_markers_exploration_3')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 # Ribosomal genes
 adata.var["ribo"] = adata.var_names.str.startswith(("RPS", "RPL"))
@@ -392,7 +448,9 @@ sc.pl.stacked_violin(adata, var_names=Necrosis_genes, groupby='leiden_Res_0.3', 
 sc.pl.umap(adata, color=Necrosis_genes, frameon=False, ncols=2, vmin=0, vmax="p99", save="Necrosis_markers.png") # Necrosis markers
 
 # %% Get deeper in the possible erytroid contamination.
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_markers_exploration_3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_markers_exploration_3')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 sc.pl.umap(adata, color=("HBB", "HBA1", "HBA2", "HBD", "HBM", "AHSP", "ALAS2", "CA1", "SLC4A1", "IFIT1B", "TRIM58", "SELENBP1", "TMCC2"), frameon=False, vmin=0, vmax="p99", save="Erythroid_contamination.png")
 
 sc.tl.score_genes(adata, gene_list=["HBB", "HBA1", "HBA2", "HBD", "HBM", "AHSP", "ALAS2", "CA1", "SLC4A1", "IFIT1B", "TRIM58", "SELENBP1", "TMCC2"], score_name="score_ery")
@@ -405,7 +463,9 @@ sc.pl.umap(adata, color="score_apop", frameon=False, ncols=2, vmin=0, vmax="p99"
 sc.pl.umap(adata, color="score_apop", frameon=False, ncols=2, save="Apoptosis_score_2.pdf")
 
 # %% Extra QC --- Extra monocytes and IACs markers
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_markers_exploration_3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_markers_exploration_3')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 sc.pl.stacked_violin(adata, var_names=["C1QA", "PSAP", "TGFBI", "BCL2A1", "JAKMIP2", "OTOA", "PLPP3", "CXCL8"], groupby='leiden_Res_0.3', title="Extra monocytes markers", save="Extra_monocytes_markers.pdf") # Extra monocytes markers
 sc.pl.umap(adata, color=["C1QA", "PSAP", "TGFBI", "BCL2A1", "JAKMIP2", "OTOA", "PLPP3", "CXCL8"], frameon=False, ncols=2, vmin=0, vmax="p99", save="Extra_monocytes_markers.png") # Extra monocytes markers
@@ -428,7 +488,9 @@ adata_filtered = adata[~adata.obs_names.isin(Hemo_to_remove)]
 adata = adata_filtered.copy()
 
 # %% Graphs to detect if contamination has been removed
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_markers_exploration_3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_markers_exploration_3')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 sc.pl.umap(adata, color=("HBB", "HBA1", "HBA2", "HBD", "HBM", "AHSP", "ALAS2", "CA1", "SLC4A1", "IFIT1B", "TRIM58", "SELENBP1", "TMCC2"), frameon=False, vmin=0, vmax="p99", save="Erythroid_contamination_bis.png")
 
 sc.tl.score_genes(adata, gene_list=["HBB", "HBA1", "HBA2", "HBD", "HBM", "AHSP", "ALAS2", "CA1", "SLC4A1", "IFIT1B", "TRIM58", "SELENBP1", "TMCC2"], score_name="score_ery")
@@ -441,18 +503,18 @@ sc.pl.umap(adata, color="score_ery", frameon=False, ncols=2, vmin=0, vmax="p99",
 # pd.set_option('display.max_rows', None)
 # pd.set_option('display.max_columns', None)
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4/Data")
-adata.obs[["orig_ident"]].value_counts(sort=False).to_csv("Orig_ident_final_values.csv")
-adata.obs[["Product_norm"]].value_counts(sort=False).to_csv("Product_norm_final_values.csv")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4' / 'Data')
+adata.obs[["orig_ident"]].value_counts(sort=False).to_csv(_output_path(_current_dir, "Orig_ident_final_values.csv"))
+adata.obs[["Product_norm"]].value_counts(sort=False).to_csv(_output_path(_current_dir, "Product_norm_final_values.csv"))
 
 ## Reset display options to default if needed
 # pd.reset_option('display.max_rows')
 # pd.reset_option('display.max_columns')
 
 # %% UMAP plots save
-os.chdir(
-    "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/scVI_integ"
-)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'scVI_integ')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 Features_to_explore = [
     "celltypist_majority_voting",
     "leiden_Res_0.3",
@@ -475,14 +537,12 @@ for i in range(len(Features_to_explore)):
 # 
 ######################################################################## 
 if Save_h5ad_2_5:
-    os.chdir(
-        "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4"
-    )
-    adata.write("Python_scVI_adata_V4_state2_5.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+    adata.write(_output_path(_current_dir, "Python_scVI_adata_V4_state2_5.h5ad"))
     print("Correctly saved")
 else:
-    os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-    adata = sc.read_h5ad("Python_scVI_adata_V4_state2_5.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+    adata = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state2_5.h5ad"))
     print("Correctly loaded")
 
 # %% Code to visualize where a specific cluster is located
@@ -506,8 +566,8 @@ sc.pl.umap(adata, color='cluster_dummy6', frameon=False)
 # State 2.8 Load
 # 
 ######################################################################## 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-adata = sc.read_h5ad("Python_scVI_adata_V4_state2_8.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+adata = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state2_8.h5ad"))
 
 # %% Annotation 1 --- Version 4
 ########################################################################
@@ -516,7 +576,9 @@ adata = sc.read_h5ad("Python_scVI_adata_V4_state2_8.h5ad")
 # 
 ######################################################################## 
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Annotation/Low_Res")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Annotation' / 'Low_Res')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 cl_annotation_low = {
     "0": "CD4 memory", # Subclusterize (Missing for example T regs)
@@ -540,19 +602,17 @@ sc.pl.umap(adata, color = ["manual_celltype_annotation_low"], frameon=False, sav
 # 
 ######################################################################## 
 if Save_h5ad_3:
-    os.chdir(
-        "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4"
-    )
-    adata.write("Python_scVI_adata_V4_state3.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+    adata.write(_output_path(_current_dir, "Python_scVI_adata_V4_state3.h5ad"))
     print("Correctly saved")
 else:
-    os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-    adata = sc.read_h5ad("Python_scVI_adata_V4_state3.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+    adata = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state3.h5ad"))
     print("Correctly loaded")
 
 # %% Atlas colorized based on metadata -- Generation of datasets
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-sc_Metadata_to_python_v33 = pd.read_csv("sc_Metadata_to_python_v33_V4.csv", sep=";") # Check it is the latest version
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+sc_Metadata_to_python_v33 = pd.read_csv(_input_path(_current_dir, "sc_Metadata_to_python_v33_V4.csv"), sep=";") # Check it is the latest version
 sc_Metadata_to_python_v33.rename(columns={'Norm_Sample_Name': 'Product_norm'}, inplace=True)
 metadata_bis = adata.obs.copy()
 
@@ -582,7 +642,9 @@ adata4.obs.loc[adata4.obs['Dummy_Column'] == 0, 'ICANS'] = pd.NA
 adata4.obs.loc[adata4.obs['Dummy_Column'] == 0, 'ICANS_Grade_Range'] = pd.NA
 
 # %% Atlas colorized based on metadata -- Plotting
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Colorized_Atlas_Metadata")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Colorized_Atlas_Metadata')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 sc.pl.umap(adata2, color = ["Time_Point_Ranges"], frameon=False, save="1_Time_Point_Ranges.png")
 sc.pl.umap(adata2, color = ["Time_Point_Ranges"], frameon=False, save="1_Time_Point_Ranges.pdf")
@@ -663,7 +725,7 @@ sc.pl.umap(adata2, color = ["CAR_Detection_Method"], frameon=False, save="21_CAR
 sc.pl.umap(adata2, color = ["CAR_Detection_Method"], frameon=False, save="21_CAR_Detection_Method.pdf")
 
 # %% Subclustering -- To get more resolution
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4')
 
 adata_CD4 = adata2[adata2.obs["manual_celltype_annotation_low"] == "CD4 memory"].copy()
 adata_CD8 = adata2[adata2.obs["manual_celltype_annotation_low"] == "CD8 cytotoxic"].copy()
@@ -680,8 +742,8 @@ adata_CD8.obs = adata_CD8.obs.drop(columns=columns_to_delete_CD8)
 adata_GATA3.obs = adata_GATA3.obs.drop(columns=columns_to_delete_GATA3)
 
 # Save objects
-adata_CD4.write("adata_CD4.h5ad")
-adata_CD8.write("adata_CD8.h5ad")
-adata_GATA3.write("adata_GATA3.h5ad")
+adata_CD4.write(_output_path(_current_dir, "adata_CD4.h5ad"))
+adata_CD8.write(_output_path(_current_dir, "adata_CD8.h5ad"))
+adata_GATA3.write(_output_path(_current_dir, "adata_GATA3.h5ad"))
 
 # %% End of script

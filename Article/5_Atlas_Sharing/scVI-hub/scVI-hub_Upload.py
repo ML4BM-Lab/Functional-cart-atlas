@@ -10,6 +10,48 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 # %% Load needed libraries
 import scvi
 import scanpy as sc
@@ -18,10 +60,10 @@ import os
 
 # %% 0. Load adata used to train model
 First_Time = False
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Python-Celltypist/V4/")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4')
 if First_Time:
     adata = sc.read(
-        "Seurat_merged_With_Celltypist.h5ad"
+        _input_path(_current_dir, "Seurat_merged_With_Celltypist.h5ad")
     )
 
     adata.layers["counts"] = adata.X.copy()
@@ -63,17 +105,15 @@ if First_Time:
 
     adata.obs.rename(columns={"orig.ident": "orig_ident"}, inplace=True)
 
-    adata.write("scVI_hub_adata.h5ad")
+    adata.write(_output_path(_current_dir, "scVI_hub_adata.h5ad"))
 
 else:
-    adata = sc.read_h5ad("scVI_hub_adata.h5ad")
+    adata = sc.read_h5ad(_input_path(_current_dir, "scVI_hub_adata.h5ad"))
 
 # %% 1. Load pretrained model
-os.chdir(
-    "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4"
-)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
 
-local_dir = "Atlas_integ_scVI_V4"
+local_dir = _input_path(_current_dir, "Atlas_integ_scVI_V4")
 model = scvi.model.SCVI.load(local_dir, adata=adata)
 
 # %% 2. Create metadata for the model
@@ -108,7 +148,7 @@ hmo
 
 # %% 5. Push to Hugging Face Hub
 # Load Hugging Face token
-with open(os.path.expanduser("/home/scamara/data/scamara/.huggingface/token.txt"), "r") as f:
+with open(_require_path(os.path.expanduser(project_dir / '.huggingface' / 'token.txt')), "r") as f:
     repo_token = f.read().strip()
 
 # Push

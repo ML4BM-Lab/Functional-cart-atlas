@@ -10,6 +10,95 @@
 ###############################################################################
 ###############################################################################
 
+## Command-line and environment path configuration
+
+.path_script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+.path_script_dir <- if (length(.path_script_arg) > 0) {
+    dirname(normalizePath(sub("^--file=", "", .path_script_arg[[1]]), mustWork = FALSE))
+} else {
+    getwd()
+}
+.find_article_dir <- function(path) {
+    current <- normalizePath(path, mustWork = FALSE)
+    repeat {
+        if (basename(current) == "Article") {
+            return(current)
+        }
+        article_child <- file.path(current, "Article")
+        if (dir.exists(article_child)) {
+            return(normalizePath(article_child, mustWork = FALSE))
+        }
+        parent <- dirname(current)
+        if (identical(parent, current)) {
+            return(normalizePath(path, mustWork = FALSE))
+        }
+        current <- parent
+    }
+}
+.article_dir <- .find_article_dir(.path_script_dir)
+.path_args <- if (interactive()) character() else commandArgs(trailingOnly = TRUE)
+.get_path_arg <- function(option, environment, fallback) {
+    equals_prefix <- paste0(option, "=")
+    equals_match <- grep(paste0("^", equals_prefix), .path_args, value = TRUE)
+    if (length(equals_match) > 0) {
+        return(sub(paste0("^", equals_prefix), "", equals_match[[1]]))
+    }
+    option_index <- match(option, .path_args)
+    if (!is.na(option_index)) {
+        if (option_index == length(.path_args)) {
+            stop(paste("Missing value for", option), call. = FALSE)
+        }
+        return(.path_args[[option_index + 1]])
+    }
+    environment_value <- Sys.getenv(environment, unset = "")
+    if (nzchar(environment_value)) {
+        return(environment_value)
+    }
+    fallback
+}
+if (!interactive() && any(.path_args %in% c("-h", "--help"))) {
+    cat("Path options:\n")
+    cat("  --project-dir DIR   Project root (env: CART_ATLAS_PROJECT_DIR; default: Article directory)\n")
+    cat("  --python-path FILE  Python executable for reticulate (env: CART_ATLAS_PYTHON; default: python3 on PATH)\n")
+    quit(status = 0)
+}
+project_dir <- normalizePath(
+    .get_path_arg("--project-dir", "CART_ATLAS_PROJECT_DIR", .article_dir),
+    mustWork = FALSE
+)
+if (!dir.exists(project_dir)) {
+    stop(
+        paste(
+            "Project directory does not exist:", project_dir,
+            "- set --project-dir or CART_ATLAS_PROJECT_DIR"
+        ),
+        call. = FALSE
+    )
+}
+python_path <- .get_path_arg("--python-path", "CART_ATLAS_PYTHON", Sys.which("python3"))
+if (!nzchar(python_path) || !file.exists(python_path)) {
+    stop(
+        paste(
+            "Python executable does not exist:", python_path,
+            "- set --python-path or CART_ATLAS_PYTHON"
+        ),
+        call. = FALSE
+    )
+}
+
+.input_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    if (!file.exists(path) && !dir.exists(path)) {
+        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    }
+    path
+}
+.output_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    path
+}
+
 ##### Import libraries #####
 library(tidyverse)
 library(cowplot)
@@ -26,14 +115,14 @@ library(Cairo)
 library(SMFilter)
 
 library(reticulate)
-use_python("/usr/bin/python3")
+use_python(python_path)
 anndata <- reticulate::import("anndata")
 
 set.seed(2504)
 
 ##### Read files #####
-path <- "/home/scamara/data_a/scamara/Atlas/Input"
-file <- paste0(path, "/Atlas_integ_scArches_FINAL_V5.h5ad")
+path <- file.path(project_dir, "Input")
+file <- .input_path(path, "Atlas_integ_scArches_FINAL_V5.h5ad")
 adata <- anndata$read_h5ad(file)
 
 sce <- AnnData2SCE(adata, "counts", uns = FALSE, obsm = FALSE, obsp = FALSE)
@@ -164,13 +253,13 @@ res_1 <- topTable(fit_1, coef = "compare", number = 10)
 
 res_all <- topTable(fit_1, coef = "compare", number = Inf)
 
-setwd("/home/scamara/data_a/scamara/Atlas/Para_Cluster_Profiler")
-saveRDS(res_all, file = "Resultados_V5_BCMA_vs_CD19_MID.RDS")
+.current_dir <- file.path(project_dir, "Para_Cluster_Profiler")
+saveRDS(res_all, file = .output_path(.current_dir, "Resultados_V5_BCMA_vs_CD19_MID.RDS"))
 
 head(res_1)
 
-setwd("/home/scamara/data_a/scamara/Atlas/Resultados_V5/BCMA_vs_CD19_MID")
-cairo_pdf("BCMA_vs_CD19_MID_Heatmap.pdf", width = 10, height = 10)
+.current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_MID")
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Heatmap.pdf"), width = 10, height = 10)
 dreamlet::plotHeatmap(df_cts, genes = rownames(res_1)) # , assays=colnames(df_cts)[2:3])
 dev.off()
 
@@ -186,7 +275,7 @@ fitList[[id]] <- fit_1
 res.compare <- as.dreamletResult(fitList) # https://diseaseneurogenomics.github.io/dreamlet/reference/as.dreamletResult.html?q=dreamletCompareClusters#details
 res.compare
 
-cairo_pdf("BCMA_vs_CD19_MID_Volcano.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Volcano.pdf"), width = 10, height = 10)
 plotVolcano(res.compare, coef = "compare", ncol = 4)
 dev.off()
 
@@ -213,7 +302,7 @@ res.zenith <- zenith_gsa(res.compare, go.gs,
 res.zenith$assay <- factor(res.zenith$assay, names(res.compare))
 
 # Plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("BCMA_vs_CD19_MID_Biological_Process_1.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Biological_Process_1.pdf"), width = 10, height = 10)
 plotZenithResults(res.zenith)
 dev.off()
 
@@ -223,7 +312,7 @@ gs <- unique(res.zenith$Geneset[res.zenith$FDR < 0.05])
 df <- res.zenith[res.zenith$Geneset %in% gs, ]
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("BCMA_vs_CD19_MID_Biological_Process_2.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Biological_Process_2.pdf"), width = 10, height = 10)
 plotZenithResults(df, Inf, Inf)
 dev.off()
 
@@ -247,7 +336,7 @@ res.zenith <- zenith_gsa(res.compare, go.gs,
 res.zenith$assay <- factor(res.zenith$assay, names(res.compare))
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("BCMA_vs_CD19_MID_KEGG_2021_Human_1.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_KEGG_2021_Human_1.pdf"), width = 10, height = 10)
 plotZenithResults(res.zenith)
 dev.off()
 
@@ -257,7 +346,7 @@ gs <- unique(res.zenith$Geneset[res.zenith$FDR < 0.05])
 df <- res.zenith[res.zenith$Geneset %in% gs, ]
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("BCMA_vs_CD19_MID_KEGG_2021_Human_2.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_KEGG_2021_Human_2.pdf"), width = 10, height = 10)
 plotZenithResults(df, Inf, Inf)
 dev.off()
 
@@ -281,7 +370,7 @@ res.zenith <- zenith_gsa(res.compare, go.gs,
 res.zenith$assay <- factor(res.zenith$assay, names(res.compare))
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("BCMA_vs_CD19_MID_Reactome_2022_1.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Reactome_2022_1.pdf"), width = 10, height = 10)
 plotZenithResults(res.zenith)
 dev.off()
 
@@ -291,7 +380,7 @@ gs <- unique(res.zenith$Geneset[res.zenith$FDR < 0.05])
 df <- res.zenith[res.zenith$Geneset %in% gs, ]
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("BCMA_vs_CD19_MID_Reactome_2022_2.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Reactome_2022_2.pdf"), width = 10, height = 10)
 plotZenithResults(df, Inf, Inf)
 dev.off()
 
@@ -315,7 +404,7 @@ res.zenith <- zenith_gsa(res.compare, go.gs,
 res.zenith$assay <- factor(res.zenith$assay, names(res.compare))
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("BCMA_vs_CD19_MID_WikiPathway_2023_Human_1.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_WikiPathway_2023_Human_1.pdf"), width = 10, height = 10)
 plotZenithResults(res.zenith)
 dev.off()
 
@@ -325,15 +414,15 @@ gs <- unique(res.zenith$Geneset[res.zenith$FDR < 0.05])
 df <- res.zenith[res.zenith$Geneset %in% gs, ]
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("BCMA_vs_CD19_MID_WikiPathway_2023_Human_2.pdf", width = 10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_WikiPathway_2023_Human_2.pdf"), width = 10, height = 10)
 plotZenithResults(df, Inf, Inf)
 dev.off()
 
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
 # Custom genesets
-setwd("/home/scamara/data_a/scamara/Atlas/Input")
-Firmas_atlas_df <- read.csv("Firmas_Atlas.csv", header = TRUE, sep = ";")
+.current_dir <- file.path(project_dir, "Input")
+Firmas_atlas_df <- read.csv(.input_path(.current_dir, "Firmas_Atlas.csv"), header = TRUE, sep = ";")
 Firmas_atlas_df %>% colnames()
 
 Firma_Activation <- Firmas_atlas_df$Activation
@@ -448,8 +537,8 @@ res.zenith <- zenith_gsa(res.compare, gsc,
 res.zenith$assay <- factor(res.zenith$assay, names(res.compare))
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-setwd("/home/scamara/data_a/scamara/Atlas/Resultados_V5/BCMA_vs_CD19_MID")
-cairo_pdf("BCMA_vs_CD19_MID_Custom_Genesets.pdf", width = 10, height = 10)
+.current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_MID")
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Custom_Genesets.pdf"), width = 10, height = 10)
 plotZenithResults(res.zenith)
 dev.off()
 
@@ -476,11 +565,11 @@ Final_result <- rbind(Custom_genesets_filtered)
 
 head(Final_result)
 
-setwd("/home/scamara/data_a/scamara/Atlas/Resultados_V5/BCMA_vs_CD19_MID")
+.current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_MID")
 if(TRUE){
-  write.csv(Final_result, "Final_result_Fig_5C_MID.csv", row.names = FALSE)
+  write.csv(Final_result, .output_path(.current_dir, "Final_result_Fig_5C_MID.csv"), row.names = FALSE)
 } else{
-  Final_result <- read.csv("Final_result_Fig_5C_MID.csv")
+  Final_result <- read.csv(.input_path(.current_dir, "Final_result_Fig_5C_MID.csv"))
 }
 
 p6 <- plotZenithResults(Final_result, Inf, Inf, sortByGeneset = TRUE) +
@@ -494,8 +583,8 @@ p6 <- plotZenithResults(Final_result, Inf, Inf, sortByGeneset = TRUE) +
   )
 
 # Plot results, but with no limit based on the highest/lowest t-statistic
-setwd("/home/scamara/data_a/scamara/Atlas/Resultados_V5/BCMA_vs_CD19_MID")
-cairo_pdf("BCMA_vs_CD19_MID_Final_Summarized_Result_1.pdf", width=10, height = 10)
+.current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_MID")
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Final_Summarized_Result_1.pdf"), width=10, height = 10)
 p6
 dev.off()
 
@@ -505,7 +594,7 @@ data_plot$GeneRatio <- data_plot$NGenes/data_plot$NTotalGenes
 data_plot$logFDR <- -log10(data_plot$FDR)
 
 # Horizontal dotplot
-cairo_pdf("BCMA_vs_CD19_MID_Final_Summarized_Result_2.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Final_Summarized_Result_2.pdf"), width=10, height = 10)
 ggplot(data_plot, aes(x = assay, y = Geneset, size=logFDR, color = delta)) +
   geom_point() +
   scale_size(range = c(1, 10)) +

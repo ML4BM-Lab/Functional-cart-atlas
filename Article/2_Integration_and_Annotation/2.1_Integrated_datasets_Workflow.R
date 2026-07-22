@@ -10,6 +10,84 @@
 ###############################################################################
 ###############################################################################
 
+## Command-line and environment path configuration
+
+.path_script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+.path_script_dir <- if (length(.path_script_arg) > 0) {
+    dirname(normalizePath(sub("^--file=", "", .path_script_arg[[1]]), mustWork = FALSE))
+} else {
+    getwd()
+}
+.find_article_dir <- function(path) {
+    current <- normalizePath(path, mustWork = FALSE)
+    repeat {
+        if (basename(current) == "Article") {
+            return(current)
+        }
+        article_child <- file.path(current, "Article")
+        if (dir.exists(article_child)) {
+            return(normalizePath(article_child, mustWork = FALSE))
+        }
+        parent <- dirname(current)
+        if (identical(parent, current)) {
+            return(normalizePath(path, mustWork = FALSE))
+        }
+        current <- parent
+    }
+}
+.article_dir <- .find_article_dir(.path_script_dir)
+.path_args <- if (interactive()) character() else commandArgs(trailingOnly = TRUE)
+.get_path_arg <- function(option, environment, fallback) {
+    equals_prefix <- paste0(option, "=")
+    equals_match <- grep(paste0("^", equals_prefix), .path_args, value = TRUE)
+    if (length(equals_match) > 0) {
+        return(sub(paste0("^", equals_prefix), "", equals_match[[1]]))
+    }
+    option_index <- match(option, .path_args)
+    if (!is.na(option_index)) {
+        if (option_index == length(.path_args)) {
+            stop(paste("Missing value for", option), call. = FALSE)
+        }
+        return(.path_args[[option_index + 1]])
+    }
+    environment_value <- Sys.getenv(environment, unset = "")
+    if (nzchar(environment_value)) {
+        return(environment_value)
+    }
+    fallback
+}
+if (!interactive() && any(.path_args %in% c("-h", "--help"))) {
+    cat("Path options:\n")
+    cat("  --project-dir DIR   Project root (env: CART_ATLAS_PROJECT_DIR; default: Article directory)\n")
+    quit(status = 0)
+}
+project_dir <- normalizePath(
+    .get_path_arg("--project-dir", "CART_ATLAS_PROJECT_DIR", .article_dir),
+    mustWork = FALSE
+)
+if (!dir.exists(project_dir)) {
+    stop(
+        paste(
+            "Project directory does not exist:", project_dir,
+            "- set --project-dir or CART_ATLAS_PROJECT_DIR"
+        ),
+        call. = FALSE
+    )
+}
+
+.input_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    if (!file.exists(path) && !dir.exists(path)) {
+        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    }
+    path
+}
+.output_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    path
+}
+
 ##### Load libraries #####
 library(tidyverse)
 library(Seurat)
@@ -29,8 +107,8 @@ Identificacion_Good_CD3 <- FALSE
 
 ##### Loading the different datasets #####
 ## Bai et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Bai_et_al/RDS")
-Seurat_list_Bai <- readRDS("Normalized_CellRanger_Bai_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Bai_et_al", "RDS")
+Seurat_list_Bai <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Bai_RDS.rds"))
 colnames(Seurat_list_Bai[[1]])
 names(Seurat_list_Bai) <- c("Bai_CR_basal", "Bai_CR_CD19_cocult", "Bai_CR_MESO_cocult", "Bai_HD_CD19_cocult", "Bai_HD_MESO_cocult", "Bai_HD_basal", "Bai_NR_basal", "Bai_NR_CD19_cocult", "Bai_NR_MESO_cocult")
 
@@ -60,8 +138,8 @@ Seurat_list_Bai_V4[[1]]@meta.data %>% head()
 
 
 ## Boroughs et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/RDS")
-Seurat_list_Boroughs <- readRDS("Normalized_CellRanger_Boroughs_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Boroughs_et_al", "RDS")
+Seurat_list_Boroughs <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Boroughs_RDS.rds"))
 
 names(Seurat_list_Boroughs) <- c(
     "Bor_D1_28Z_CD19_Stim", "Bor_D1_28Z_No_Stim", "Bor_D1_BBZ_CD19_Stim", "Bor_D1_BBZ_No_Stim", "Bor_D1_Z_CD19_Stim", "Bor_D1_Z_No_Stim",
@@ -78,8 +156,8 @@ Seurat_list_Boroughs[[1]]@meta.data %>% colnames()
 
 
 ## Deng et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Deng_et_al/RDS")
-Seurat_list_Deng <- readRDS("Normalized_CellRanger_Deng_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Deng_et_al", "RDS")
+Seurat_list_Deng <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Deng_RDS.rds"))
 
 names(Seurat_list_Deng) <- c(
     "Den_Pt_14", "Den_Pt_15", "Den_Pt_16", "Den_Pt_18", "Den_Pt_20", "Den_Pt_21", "Den_Pt_26", "Den_Pt_27",
@@ -112,8 +190,8 @@ rm(Seurat_list_Deng)
 
 
 ## Good et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Good_et_al/RDS")
-Seurat_list_Good <- readRDS("Normalized_CellRanger_Good_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Good_et_al", "RDS")
+Seurat_list_Good <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Good_RDS.rds"))
 
 names(Seurat_list_Good) <- c("Goo_Pt_110", "Goo_Pt_116", "Goo_Pt_125", "Goo_Pt_129", "Goo_Pt_245", "Goo_Pt_253", "Goo_Pt_263", "Goo_Pt_276", "Goo_Pt_282")
 
@@ -142,8 +220,8 @@ rm(Seurat_list_Good)
 
 
 ## Lynn et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Lynn_et_al/RDS")
-Seurat_list_Lynn <- readRDS("Normalized_CellRanger_Lynn_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Lynn_et_al", "RDS")
+Seurat_list_Lynn <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Lynn_RDS.rds"))
 
 names(Seurat_list_Lynn) <- c("Lyn_Exp1_CD19", "Lyn_Exp1_GD2", "Lyn_Exp2_Cont", "Lyn_Exp2_JUN")
 
@@ -156,8 +234,8 @@ colnames(Seurat_list_Lynn[[1]])
 
 
 ## Melenhorst et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Melenhorst_et_al/RDS")
-Seurat_list_Melenhorst <- readRDS("Normalized_CellRanger_Melenhorst_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Melenhorst_et_al", "RDS")
+Seurat_list_Melenhorst <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Melenhorst_RDS.rds"))
 
 names(Seurat_list_Melenhorst) <- c("Mel_PT1_M12", "Mel_PT1_M15", "Mel_PT1_Y9", "Mel_PT2_M3", "Mel_PT2_Y3", "Mel_PT2_Y6_5")
 
@@ -186,8 +264,8 @@ rm(Seurat_list_Melenhorst)
 
 
 ## Sheih et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Sheih_et_al/RDS")
-Seurat_list_Sheih <- readRDS("Normalized_CellRanger_Sheih_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Sheih_et_al", "RDS")
+Seurat_list_Sheih <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Sheih_RDS.rds"))
 
 names(Seurat_list_Sheih) <- c(
     "She_CLL_1_d21", "She_CLL_1_d38", "She_CLL_1_d112", "She_CLL_1_IP", "She_CLL_2_d12", "She_CLL_2_d29", "She_CLL_2_d83", "She_CLL_2_IP",
@@ -203,8 +281,8 @@ colnames(Seurat_list_Sheih[[1]])
 
 
 ## Wang et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Wang_et_al/RDS")
-Seurat_list_Wang <- readRDS("Normalized_CellRanger_Wang_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Wang_et_al", "RDS")
+Seurat_list_Wang <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Wang_RDS.rds"))
 
 names(Seurat_list_Wang) <- c("Wan_PD1", "Wan_PD2", "Wan_PD3", "Wan_SPD1", "Wan_SPD2", "Wan_SPD3")
 
@@ -233,8 +311,8 @@ rm(Seurat_list_Wang)
 
 
 ## Xhangolli et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Xhangolli_et_al/RDS")
-Seurat_list_Xhangolli <- readRDS("Normalized_CellRanger_Xhangolli_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Xhangolli_et_al", "RDS")
+Seurat_list_Xhangolli <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Xhangolli_RDS.rds"))
 
 for (i in seq_along(Seurat_list_Xhangolli)) {
     Seurat_list_Xhangolli[[i]] <- RenameCells(Seurat_list_Xhangolli[[i]], new.names = paste0("Xha_", colnames(Seurat_list_Xhangolli[[i]])))
@@ -245,8 +323,8 @@ colnames(Seurat_list_Xhangolli[[1]])
 
 
 ## Li X. et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Li_X_et_al/RDS")
-Seurat_list_Li_X <- readRDS("Normalized_CellRanger_Li_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Li_X_et_al", "RDS")
+Seurat_list_Li_X <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Li_RDS.rds"))
 
 names(Seurat_list_Li_X) <- c("LiX_IP", "LiX_PP", "LiX_RP")
 
@@ -259,8 +337,8 @@ colnames(Seurat_list_Li_X[[1]])
 
 
 ## Rodriguez-Marquez et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Rodriguez-Marquez_et_al/RDS")
-Seurat_list_Rodriguez_Marquez <- readRDS("Normalized_CellRanger_Rodrguez_Marquez_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Rodriguez-Marquez_et_al", "RDS")
+Seurat_list_Rodriguez_Marquez <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Rodrguez_Marquez_RDS.rds"))
 
 a <- names(Seurat_list_Rodriguez_Marquez)
 
@@ -275,8 +353,8 @@ colnames(Seurat_list_Rodriguez_Marquez[[1]])
 
 
 ## Haradvala et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Haradvala_et_al/RDS")
-Seurat_list_Haradvala <- readRDS("Normalized_CellRanger_Haradvala_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Haradvala_et_al", "RDS")
+Seurat_list_Haradvala <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Haradvala_RDS.rds"))
 
 names(Seurat_list_Haradvala)
 
@@ -305,8 +383,8 @@ rm(Seurat_list_Haradvala)
 
 
 ## Li X. Cancer cell letter et al dataset
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Li_X_Cancer_Cell_letter_et_al/RDS")
-Seurat_list_Li_X_letter <- readRDS("Normalized_CellRanger_Li_X_letter_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Li_X_Cancer_Cell_letter_et_al", "RDS")
+Seurat_list_Li_X_letter <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Li_X_letter_RDS.rds"))
 
 names(Seurat_list_Li_X_letter)
 
@@ -354,7 +432,7 @@ Seurat_merged # 444142 cells
 
 ## Identification of NON-CD3+ population inside Good's dataset!
 if (Identificacion_Good_CD3) {
-    pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/WO_integ/motivos_para_excluir_parte_GOOD.pdf")
+    pdf(.output_path(project_dir, "Resultados", "Joined_datasets", "Integration", "Plots", "WO_integ", "motivos_para_excluir_parte_GOOD.pdf"))
     FeaturePlot(object = Seurat_merged, features = c("CD3D", "CD4", "CD8A"), raster = FALSE, order = TRUE)
     dev.off()
 }
@@ -388,7 +466,7 @@ Seurat_merged <- RunUMAP(Seurat_merged,
 colors_palette <- c("#CDFD02", "#6C35FF", "#FBA3B4", "#CBC7FE", "#2B097E", "#FE4F11", "#8E0D0D", "#A9FCFA", "#D35E82", "#CECECE", "#FFC49C", "#383838", "#00A57E")
 
 # Plot UMAP
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/WO_integ/WO_integ_Seurat.pdf")
+pdf(.output_path(project_dir, "Resultados", "Joined_datasets", "Integration", "Plots", "V4", "WO_integ", "WO_integ_Seurat.pdf"))
 DimPlot(Seurat_merged,
     group.by = "orig.ident",
     reduction = "umap_wo_integ",
@@ -405,14 +483,14 @@ p <- FeaturePlot(Seurat_merged,
     raster = FALSE
 )
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/WO_integ/QC_metrics_WO_integ_Seurat.pdf")
+pdf(.output_path(project_dir, "Resultados", "Joined_datasets", "Integration", "Plots", "V4", "WO_integ", "QC_metrics_WO_integ_Seurat.pdf"))
 p + plot_annotation(title = "All datasets merged", theme = theme(plot.title = element_text(size = 16)))
 dev.off()
 
 rm(p)
 
 # Cell cycle plot
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/WO_integ/WO_integ_Seurat_cellcycle_scoring.pdf")
+pdf(.output_path(project_dir, "Resultados", "Joined_datasets", "Integration", "Plots", "V4", "WO_integ", "WO_integ_Seurat_cellcycle_scoring.pdf"))
 DimPlot(Seurat_merged,
     group.by = "Phase",
     reduction = "umap_wo_integ",
@@ -426,21 +504,20 @@ DimPlot(Seurat_merged,
 )
 dev.off()
 
-saveRDS(Seurat_merged, "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/RDS/WO_integ/V4/Seurat_merged_WO_integ.RDS")
+saveRDS(Seurat_merged, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration", "RDS", "WO_integ", "V4", "Seurat_merged_WO_integ.RDS"))
 
 ## Add automatically cell type information using CellTypist
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Python-Celltypist/V4")
-
+.current_dir <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration", "Python-Celltypist", "V4")
 ## Create or load the h5ad file if necessary
 if (Create_h5ad) {
     # Here I remove unnecesary slots that produce some errors in Python
     Seurat_merged2 <- CreateSeuratObject(Seurat_merged$RNA@counts)
     Seurat_merged2@meta.data <- Seurat_merged@meta.data
-    SaveH5Seurat(Seurat_merged2, filename = "Seurat_merged.h5Seurat")
-    Convert("Seurat_merged.h5Seurat", dest = "h5ad")
+    SaveH5Seurat(Seurat_merged2, filename = .output_path(.current_dir, "Seurat_merged.h5Seurat"))
+    Convert(.input_path(.current_dir, "Seurat_merged.h5Seurat"), dest = "h5ad")
     print("Correctamente guardado")
 } else {
-    load_Seurat_merged <- LoadH5Seurat("Seurat_merged.h5Seurat")
+    load_Seurat_merged <- LoadH5Seurat(.input_path(.current_dir, "Seurat_merged.h5Seurat"))
     Seurat_merged <- load_Seurat_merged
     rm(load_Seurat_merged)
     print("Correctamente cargado")
@@ -452,27 +529,27 @@ if (Create_h5ad) {
 
 
 ## Load and add metadata obtained with CellTypist
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Python-Celltypist/V4")
-celltypist_metadata <- read.csv(file = "celltypist_metadata_table.csv", row.names = 1)
+.current_dir <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration", "Python-Celltypist", "V4")
+celltypist_metadata <- read.csv(file = .input_path(.current_dir, "celltypist_metadata_table.csv"), row.names = 1)
 celltypist_metadata <- celltypist_metadata %>%
     dplyr::select("predicted_labels", "over_clustering", "majority_voting", "conf_score") %>%
     rename_with(~ paste0("celltypist_", .), everything())
 
-Seurat_merged <- readRDS("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/RDS/WO_integ/V4/Seurat_merged_WO_integ.RDS")
+Seurat_merged <- readRDS(.input_path(project_dir, "Resultados", "Joined_datasets", "Integration", "RDS", "WO_integ", "V4", "Seurat_merged_WO_integ.RDS"))
 Seurat_merged <- AddMetaData(Seurat_merged, metadata = celltypist_metadata)
 
 ## Celltypist annotations plot
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/WO_integ/Celltypist_ann_WO_integ_Seurat.pdf")
+pdf(.output_path(project_dir, "Resultados", "Joined_datasets", "Integration", "Plots", "V4", "WO_integ", "Celltypist_ann_WO_integ_Seurat.pdf"))
 DimPlot(Seurat_merged, reduction = "umap_wo_integ", group.by = "celltypist_majority_voting", pt.size = 0.3, raster = FALSE)
 dev.off()
 
 ## Save again h5ad object to include celltypist data
 Seurat_merged3 <- CreateSeuratObject(Seurat_merged$RNA@counts)
 Seurat_merged3@meta.data <- Seurat_merged@meta.data
-SaveH5Seurat(Seurat_merged3, filename = "Seurat_merged_With_Celltypist.h5Seurat")
-Convert("Seurat_merged_With_Celltypist.h5Seurat", dest = "h5ad")
+SaveH5Seurat(Seurat_merged3, filename = .output_path(.current_dir, "Seurat_merged_With_Celltypist.h5Seurat"))
+Convert(.input_path(.current_dir, "Seurat_merged_With_Celltypist.h5Seurat"), dest = "h5ad")
 
 ## Save state 2 in RDS
-saveRDS(Seurat_merged, "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/RDS/WO_integ/V4/Seurat_merged_WO_integ_state2.RDS")
+saveRDS(Seurat_merged, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration", "RDS", "WO_integ", "V4", "Seurat_merged_WO_integ_state2.RDS"))
 
 ##### END OF SCRIPT #####

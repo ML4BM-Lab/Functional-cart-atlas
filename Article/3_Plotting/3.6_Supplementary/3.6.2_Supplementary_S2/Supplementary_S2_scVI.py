@@ -10,8 +10,50 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 ##### Use of scVI in its Python version #####
-## More info: https://ccbskillssem.github.io/assets/scvi_notebook.html y https://docs.scvi-tools.org/en/stable/tutorials/notebooks/harmonization.html
+## More info: https://ccbskillssem.github.io/assets/scvi_notebook.html and https://docs.scvi-tools.org/en/stable/tutorials/notebooks/harmonization.html
 
 #%% Load all the needed libraries
 import scanpy as sc
@@ -40,12 +82,14 @@ palette = [
 Primera_vez = False
 
 #%% Read the data
-adata = sc.read("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/scVI/Sin_GT_With_Python/Seurat_merged_RAW_for_Py.h5ad") # Obtained in Supplementary_S2_Methods.R script
+adata = sc.read(_require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration_methods_lab' / 'scVI' / 'Sin_GT_With_Python' / 'Seurat_merged_RAW_for_Py.h5ad')) # Obtained in Supplementary_S2_Methods.R script
 adata.raw = adata  # keep full dimension safe
 
 # %% Obtain the cellular annotation
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Raw_Atlas")
-adata_orig = sc.read_h5ad("Python_scVI_adata_big_V4_state4.h5ad")
+data_dir = project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas'
+if not data_dir.is_dir():
+    raise FileNotFoundError(f"Required input directory does not exist: {data_dir}")
+adata_orig = sc.read_h5ad(_input_path(data_dir, "Python_scVI_adata_big_V4_state4.h5ad"))
 
 adata_orig.obs.index = adata_orig.obs.index.str.replace(r"_\d+$", "", regex=True)
 
@@ -56,11 +100,11 @@ adata_subset = adata[common_cells].copy()
 
 adata_subset.obs["manual_celltype_annotation_high"] = adata_orig.obs.loc[common_cells, "manual_celltype_annotation_high"]
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab")
+results_dir = project_dir / 'Resultados' / 'Joined_datasets' / 'Integration_methods_lab'
 df_annotation = adata_subset.obs[["manual_celltype_annotation_high"]].copy()
 df_annotation["cell_name"] = df_annotation.index
 df_annotation = df_annotation.reset_index(drop=True)
-df_annotation.to_csv("cell_annotation_manual.csv", index=False)
+df_annotation.to_csv(_output_path(results_dir, "cell_annotation_manual.csv"), index=False)
 
 adata_subset = adata[common_cells].copy()
 adata_subset.obs["manual_celltype_annotation_high"] = adata_orig.obs.loc[common_cells, "manual_celltype_annotation_high"]
@@ -69,7 +113,7 @@ del adata
 adata = adata_subset.copy()
 
 #%% Read the metadata, process and adapt it
-df = pd.read_csv("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Datasets_Metadata/scRNAseq_metadata_CARTs_v10.csv", skipfooter=6, sep=";")
+df = pd.read_csv(_require_path(project_dir / 'Datasets_Metadata' / 'scRNAseq_metadata_CARTs_v10.csv'), skipfooter=6, sep=";")
 Data_rows = adata.obs.Product.unique()
 filtered_df = df[df["Sample name"].isin(Data_rows)]
 filtered_df = filtered_df[["Sample name", "Age", "Age_Range", "Sex", "CAR_Construct", "CAR_Gen", "ScFv", "Costim_Domain_1", "Costim_Domain_2", "STATUS", "Stimulated"]]
@@ -114,12 +158,12 @@ if Primera_vez:
     model.train()
 
 #%% Save/Load trained model
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/scVI/Sin_GT_With_Python")
+model_dir = project_dir / 'Resultados' / 'Joined_datasets' / 'Integration_methods_lab' / 'scVI' / 'Sin_GT_With_Python'
 
 if Primera_vez:
-    model.save("Healty_donors_scvi_v1", overwrite=True, save_anndata=True)
+    model.save(_output_path(model_dir, "Healty_donors_scvi_v1"), overwrite=True, save_anndata=True)
 else:
-    model = scvi.model.SCVI.load('Healty_donors_scvi_v1', adata)
+    model = scvi.model.SCVI.load(_input_path(model_dir, 'Healty_donors_scvi_v1'), adata)
 
 #%% Obtain latent representation from scVI to evaluate it
 adata.obsm["X_scVI"] = model.get_latent_representation()
@@ -131,16 +175,18 @@ sc.tl.umap(adata, min_dist=0.4)
 
 # %% Save or read .h5ad
 Editar_Figura = False
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/scVI/Sin_GT_With_Python")
+model_dir = project_dir / 'Resultados' / 'Joined_datasets' / 'Integration_methods_lab' / 'scVI' / 'Sin_GT_With_Python'
 if Editar_Figura:
-    adata = sc.read_h5ad("Suplementaria_S2_scVI_state1.h5ad")
+    adata = sc.read_h5ad(_input_path(model_dir, "Suplementaria_S2_scVI_state1.h5ad"))
     print("Correctly loaded")
 else:
-    adata.write("Suplementaria_S2_scVI_state1.h5ad")
+    adata.write(_output_path(model_dir, "Suplementaria_S2_scVI_state1.h5ad"))
     print("Correctly saved")
 
 #%% UMAP representation and save
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Suplementarias/")
+figures_dir = project_dir / 'Resultados_Figuras' / 'Suplementarias'
+figures_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = figures_dir
 
 sns.palplot(palette)
 

@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1
+
+# Rocinante Python environment
+# Original host: Ubuntu 20.04.6 LTS, Python 3.8.10
+FROM ubuntu:20.04
+
+LABEL org.opencontainers.image.title="Functional CAR-T Atlas - Python (roci)" \
+      org.opencontainers.image.description="Python environment recovered from the Rocinante workstation" \
+      org.opencontainers.image.version="0.1.0"
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TZ=Etc/UTC
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        python3-setuptools \
+        python3-wheel \
+        ca-certificates \
+        libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 --version | grep -q '^Python 3\.8\.10$' \
+    && python3 -m pip install \
+        pip==23.3.2 \
+        setuptools==57.5.0 \
+        wheel==0.41.3
+
+COPY environments/roci/Docker/requirements.runtime.txt /tmp/requirements.txt
+
+# This runtime closure contains the exact recovered versions needed by the
+# scripts marked "# Machine: Rocinante". --no-deps prevents pip from changing
+# those versions while resolving transitive requirements.
+# Older jaxlib wheels are kept in JAX's official archive after PyPI removal.
+RUN python3 -m pip install --no-cache-dir --no-deps \
+        --find-links https://storage.googleapis.com/jax-releases/jax_releases.html \
+        -r /tmp/requirements.txt \
+    && rm -f /tmp/requirements.txt
+
+WORKDIR /workspace
+
+CMD ["bash"]

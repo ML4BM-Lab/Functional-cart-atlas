@@ -10,13 +10,55 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 # %% Import libraries
 import os
 import scanpy as sc
 
 # %% Read files
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Raw_Atlas")
-adata_V5 = sc.read_h5ad("Atlas_integ_scArches_FINAL_V5_Normalized.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas')
+adata_V5 = sc.read_h5ad(_input_path(_current_dir, "Atlas_integ_scArches_FINAL_V5_Normalized.h5ad"))
 adata_V5_orig = adata_V5.copy()
 
 # %% Change metadata columns
@@ -52,7 +94,7 @@ for key in ["distances", "connectivities"]:
         del adata_V5.obsp[key]
 
 # %% Save files
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/UCSC_Browser")
-adata_V5.write("Atlas_integ_scArches_FINAL_V5_Normalized_for_UCSC.h5ad")
+_current_dir = Path(project_dir / 'UCSC_Browser')
+adata_V5.write(_output_path(_current_dir, "Atlas_integ_scArches_FINAL_V5_Normalized_for_UCSC.h5ad"))
 
 # %% End of script

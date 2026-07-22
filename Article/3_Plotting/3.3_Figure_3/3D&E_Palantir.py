@@ -10,6 +10,48 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 # %% Import libraries
 import palantir
 import scanpy as sc
@@ -69,11 +111,15 @@ def binned_means_zscore(adata, genes, pseudotime, n_bins=25):
 random.seed(2504)
 
 # %% Load data
-os.chdir("/home/scamara/data_a/scamara/Atlas/Input")
-ad_orig = sc.read("Python_scVI_adata_big_V4_state4_Normalized.h5ad")
+data_dir = project_dir / 'Input'
+if not data_dir.is_dir():
+    raise FileNotFoundError(f"Required input directory does not exist: {data_dir}")
+ad_orig = sc.read(_input_path(data_dir, "Python_scVI_adata_big_V4_state4_Normalized.h5ad"))
 
 # %% Set PATH to save figs
-os.chdir("/home/scamara/data_a/scamara/Atlas/Figuras/Figura_3")
+figures_dir = project_dir / 'Figuras' / 'Figura_3'
+figures_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = figures_dir
 
 # %% Filter object
 # Antigen == "Blood"
@@ -254,7 +300,7 @@ cbar.set_label("Expression (z-score per gene)")
 
 # Save
 out_pdf = "_3E_Palantir_TopGenes_Heatmaps_4Pathways.pdf"
-fig.savefig(out_pdf, bbox_inches="tight")
+fig.savefig(_output_path(figures_dir, out_pdf), bbox_inches="tight")
 plt.show()
 
 print("Saved:", out_pdf)

@@ -10,6 +10,48 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 # %% Link to tutorial followed:
 # https://docs.scarches.org/en/latest/scanvi_surgery_pipeline.html
 
@@ -30,12 +72,12 @@ random.seed(2504)
 
 # %% Load needed files
 # Load ATLAS
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Raw_Atlas")
-adata_Reference = sc.read_h5ad("Python_scVI_adata_big_V4_state4.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas')
+adata_Reference = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_big_V4_state4.h5ad"))
 
 # Load Jordanas (Query)
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Python-Celltypist/V5")
-adata_V5 = sc.read_h5ad("Seurat_merged_With_Celltypist.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V5')
+adata_V5 = sc.read_h5ad(_input_path(_current_dir, "Seurat_merged_With_Celltypist.h5ad"))
 adata_Query = adata_V5.copy()
 adata_Query = adata_Query[adata_Query.obs["orig.ident"] == "Jordana_et_al"]
 
@@ -96,15 +138,13 @@ if Train:
 # %% Save/Load trained model
 ############################
 
-os.chdir(
-    "/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scArches/V5"
-)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Train:
     vae.save("Atlas_integ_scArches_Reference_V5", overwrite=True, save_anndata=True)
     print("Saved successfully")
 else:
-    vae = sca.models.SCVI.load("Atlas_integ_scArches_Reference_V5")
+    vae = sca.models.SCVI.load(_input_path(_current_dir, "Atlas_integ_scArches_Reference_V5"))
     print("Loaded successfully")
 
 # %% Create the SCANVI model instance
@@ -120,15 +160,13 @@ if Train:
 # %% Save/Load trained model
 ############################
 
-os.chdir(
-    "/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scArches/V5"
-)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Train:
     scanvae.save("Atlas_integ_scArches_Reference_V5_scanvae", overwrite=True, save_anndata=True)
     print("Saved successfully")
 else:
-    scanvae = sca.models.SCANVI.load("Atlas_integ_scArches_Reference_V5_scanvae")
+    scanvae = sca.models.SCANVI.load(_input_path(_current_dir, "Atlas_integ_scArches_Reference_V5_scanvae"))
     print("Loaded successfully")
 
 # %% Create anndata file of latent representation and compute UMAP
@@ -152,13 +190,13 @@ if Save_h5ad_1:
 # State 1 Load/Save
 # 
 ######################################################################## 
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scArches/V5")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Save_h5ad_1:
-    reference_latent.write("Atlas_integ_scArches_Reference_V5_state1.h5ad")
+    reference_latent.write(_output_path(_current_dir, "Atlas_integ_scArches_Reference_V5_state1.h5ad"))
     print("Correctly saved")
 else:
-    reference_latent = sc.read_h5ad("Atlas_integ_scArches_Reference_V5_state1.h5ad")
+    reference_latent = sc.read_h5ad(_input_path(_current_dir, "Atlas_integ_scArches_Reference_V5_state1.h5ad"))
     print("Correctly loaded")
 
 # %% Compute the accuracy of the learned classifier
@@ -222,15 +260,13 @@ if Train_2:
 )
 
 # %% Save/Load trained model
-os.chdir(
-    "/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scArches/V5"
-)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Train_2:
-    model.save("Atlas_integ_scArches_Query_V5_scanvae", overwrite=True, save_anndata=True)
+    model.save(_output_path(_current_dir, "Atlas_integ_scArches_Query_V5_scanvae"), overwrite=True, save_anndata=True)
     print("Saved successfully")
 else:
-    model = sca.models.SCANVI.load("Atlas_integ_scArches_Query_V5_scanvae")
+    model = sca.models.SCANVI.load(_input_path(_current_dir, "Atlas_integ_scArches_Query_V5_scanvae"))
     print("Loaded successfully")
 
 
@@ -275,13 +311,13 @@ query_latent.obs["Jordanas_Equivalence"] = query_latent.obs["Jordanas_Original_A
 # State 1 Load/Save
 # 
 ######################################################################## 
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scArches/V5")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Save_h5ad_2:
-    query_latent.write("Atlas_integ_scArches_Query_V5_state1.h5ad")
+    query_latent.write(_output_path(_current_dir, "Atlas_integ_scArches_Query_V5_state1.h5ad"))
     print("Correctly saved")
 else:
-    query_latent = sc.read_h5ad("Atlas_integ_scArches_Query_V5_state1.h5ad")
+    query_latent = sc.read_h5ad(_input_path(_current_dir, "Atlas_integ_scArches_Query_V5_state1.h5ad"))
     print("Correctly loaded")
 
 
@@ -376,23 +412,23 @@ sc.pl.umap(
 # State 1 Load/Save
 # 
 ######################################################################## 
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scArches/V5")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Save_h5ad_3:
-    full_latent.write("Atlas_integ_scArches_Full_V5_state1.h5ad")
+    full_latent.write(_output_path(_current_dir, "Atlas_integ_scArches_Full_V5_state1.h5ad"))
     print("Correctly saved")
 else:
-    full_latent = sc.read_h5ad("Atlas_integ_scArches_Full_V5_state1.h5ad")
+    full_latent = sc.read_h5ad(_input_path(_current_dir, "Atlas_integ_scArches_Full_V5_state1.h5ad"))
     print("Correctly loaded")
 
 # %% Load needed files
 # Load ATLAS
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Raw_Atlas")
-adata_Reference = sc.read_h5ad("Python_scVI_adata_big_V4_state4.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas')
+adata_Reference = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_big_V4_state4.h5ad"))
 
 # Load Jordanas (Query)
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Python-Celltypist/V5")
-adata_V5 = sc.read_h5ad("Seurat_merged_With_Celltypist.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V5')
+adata_V5 = sc.read_h5ad(_input_path(_current_dir, "Seurat_merged_With_Celltypist.h5ad"))
 adata_Query = adata_V5.copy()
 adata_Query = adata_Query[adata_Query.obs["orig.ident"] == "Jordana_et_al"]
 
@@ -407,8 +443,8 @@ adata_big.obsm = full_latent.obsm.copy()
 adata_big.obsp = full_latent.obsp.copy()
 
 # %% Add final metadata
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V5")
-sc_Metadata_to_python_v33 = pd.read_csv("sc_Metadata_to_python_v33_V5.csv", sep=";") # Comprobar que es la version mas actualizada de la metadata
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V5')
+sc_Metadata_to_python_v33 = pd.read_csv(_input_path(_current_dir, "sc_Metadata_to_python_v33_V5.csv"), sep=";") # Check that this is the most up-to-date version of the metadata
 sc_Metadata_to_python_v33.rename(columns={'Norm_Sample_Name': 'Product_norm'}, inplace=True)
 
 # Merge metadata
@@ -434,7 +470,7 @@ adata_big_2.obs = merged_df.copy()
 # FINAL object Load/Save
 # 
 ######################################################################## 
-os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scArches/V5")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Save_h5ad_4:
     adata_big_2.raw = None
@@ -442,8 +478,8 @@ if Save_h5ad_4:
 
     ##### Changes in metadata to up-to-date to latest version #####
     ## Load CSV with changes
-    os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Raw_Atlas")
-    time_point_changes = pd.read_csv("Time_Point_Changes_V5.csv", sep=";", index_col="Norm_Sample_Name")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas')
+    time_point_changes = pd.read_csv(_input_path(_current_dir, "Time_Point_Changes_V5.csv"), sep=";", index_col="Norm_Sample_Name")
 
     # Join directly to update Time_Point and Time_Point_Ranges
     adata_big_2.obs = adata_big_2.obs.drop(columns=["Time_Point", "Time_Point_Ranges"], errors="ignore")
@@ -458,10 +494,10 @@ if Save_h5ad_4:
     print(Check.obs[["Product_norm", "Time_Point", "Time_Point_Ranges"]].drop_duplicates().to_string(index=False))
 
 
-    adata_big_2.write("Atlas_integ_scArches_FINAL_V5.h5ad")
+    adata_big_2.write(_output_path(_current_dir, "Atlas_integ_scArches_FINAL_V5.h5ad"))
     print("Correctly saved")
 else:
-    adata_big_2 = sc.read_h5ad("Atlas_integ_scArches_FINAL_V5.h5ad")
+    adata_big_2 = sc.read_h5ad(_input_path(_current_dir, "Atlas_integ_scArches_FINAL_V5.h5ad"))
     print("Correctly loaded")
 
 # %% Check umap

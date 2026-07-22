@@ -10,6 +10,48 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 # %% Import libraries
 import os
 import scanpy as sc
@@ -22,7 +64,7 @@ import pandas as pd
 random.seed(2504)
 
 # %% Load data
-path = "/home/scamara/data_a/scamara/Atlas/Input"
+path = project_dir / 'Input'
 file = f"{path}/Python_scVI_adata_big_V4_state4.h5ad"
 adata = anndata.read_h5ad(file)
 print(adata.shape[0])
@@ -147,7 +189,9 @@ for name, genes in gene_signatures.items():
     )
 
 # %% Plot
-os.chdir("/home/scamara/data_a/scamara/Atlas/Figuras/Figura_3")
+figures_dir = project_dir / 'Figuras' / 'Figura_3'
+figures_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = figures_dir
 for name in gene_signatures.keys():
     score_col = name + "_score"
     if score_col in adata_filtered.obs.columns:

@@ -10,6 +10,49 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+import sys
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 # %% Load all the needed libraries
 import scanpy as sc
 import os
@@ -27,8 +70,8 @@ random.seed(2504)
 
 # %% Load data
 if Save_h5ad:
-    os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4")
-    adata_GATA3 = sc.read_h5ad("adata_GATA3.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4')
+    adata_GATA3 = sc.read_h5ad(_input_path(_current_dir, "adata_GATA3.h5ad"))
 
 # %% Calculate neighbours and leiden resolutions
 if Save_h5ad:
@@ -46,53 +89,60 @@ if Save_h5ad:
 # 
 ######################################################################## 
 if Save_h5ad:
-    os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4")
-    adata_GATA3.write("adata_GATA3_state1.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4')
+    adata_GATA3.write(_output_path(_current_dir, "adata_GATA3_state1.h5ad"))
     print("Correctly saved")
 else:
-    os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4")
-    adata_GATA3 = sc.read_h5ad("adata_GATA3_state1.h5ad")
+    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4')
+    adata_GATA3 = sc.read_h5ad(_input_path(_current_dir, "adata_GATA3_state1.h5ad"))
     print("Correctly loaded")
 
 # %% Check which resolution to choose for subclustering using Clustree
 if False:
     import invoke
-    os.chdir("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Codigo/Codigo_datasets_atlas/Datasets_Integration/Tests_labs")
-    CLUSTREE_SCRIPT = "Leiden_resol_lab_clustree_function.R"
-    ADATA_PATH = "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4/adata_GATA3_state1.h5ad"
-    CLUSTREE_OUT = "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4/Clustree_res/clustree_GATA3.png"
+    _current_dir = Path(project_dir / 'Codigo' / 'Codigo_datasets_atlas' / 'Datasets_Integration' / 'Tests_labs')
+    if not _current_dir.is_dir():
+        raise FileNotFoundError(f"Required input directory does not exist: {_current_dir}")
+    sys.path.insert(0, str(_current_dir))
+    CLUSTREE_SCRIPT = _input_path(_current_dir, "Leiden_resol_lab_clustree_function.R")
+    ADATA_PATH = _require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4' / 'adata_GATA3_state1.h5ad')
+    CLUSTREE_OUT = project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4' / 'Clustree_res' / 'clustree_GATA3.png'
     Carrera = invoke.run(f"Rscript {CLUSTREE_SCRIPT} {ADATA_PATH} {CLUSTREE_OUT}")
 
 # After examining the resulting graph, I decided to use 0.3 resolution
 
 # %% Clustering Plots --- GATA3 subclustering UMAP
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Subclustering/GATA3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Subclustering' / 'GATA3')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 sc.pl.umap(adata_GATA3, color="leiden_Sub_Res_0.3", frameon=False, save = "0_GATA3_subclustering.png")
 sc.pl.umap(adata_GATA3, color="leiden_Sub_Res_0.3", frameon=False, save = "0_GATA3_subclustering.pdf")
 
 # %% Clustering Plots --- Dataset contribution to cluster & cluster composition by dataset
 cluster_props = get_cluster_proportions(adata_GATA3, cluster_key="leiden_Sub_Res_0.3", sample_key="orig_ident")
 f1 = plot_cluster_proportions(cluster_props, xlabel_rotation=90, cluster_palette=sns.color_palette("hls", adata_GATA3.obs["leiden_Sub_Res_0.3"].nunique()))
-f1.savefig("QC_Datasets_to_Cluster_distrib.pdf")
-f1.savefig("QC_Datasets_to_Cluster_distrib.png")
+f1.savefig(_output_path(_current_dir, "QC_Datasets_to_Cluster_distrib.pdf"))
+f1.savefig(_output_path(_current_dir, "QC_Datasets_to_Cluster_distrib.png"))
 
 cluster_props_2 = get_cluster_proportions(adata_GATA3, cluster_key="orig_ident", sample_key="leiden_Sub_Res_0.3")
 f2 = plot_cluster_proportions(cluster_props_2, xlabel_rotation=90, cluster_palette=sns.color_palette("hls", adata_GATA3.obs["orig_ident"].nunique()))
-f2.savefig("QC_Clusters_to_Dataset_distrib.pdf")
-f2.savefig("QC_Clusters_to_Dataset_distrib.png")
+f2.savefig(_output_path(_current_dir, "QC_Clusters_to_Dataset_distrib.pdf"))
+f2.savefig(_output_path(_current_dir, "QC_Clusters_to_Dataset_distrib.png"))
 
 # %% Finding marker genes by subcluster
 sc.pp.log1p(adata_GATA3) # Calling this function before ranking genes avoids the need to use the raw data and fixes the dictionary issue
 sc.tl.rank_genes_groups(adata_GATA3, "leiden_Sub_Res_0.3", method="wilcoxon") # This function expects the data to be log-transformed
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Subclustering/GATA3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Subclustering' / 'GATA3')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 sc.pl.rank_genes_groups(adata_GATA3, n_genes=25, sharey=False, save=".pdf")
 sc.pl.rank_genes_groups(adata_GATA3, n_genes=25, sharey=False, save=".png")
 
 sc.pl.rank_genes_groups_stacked_violin(adata_GATA3, n_genes=4, cmap='RdBu_r', groupby="leiden_Sub_Res_0.3", save="scvi.pdf")
 
 # %% Marker genes by cluster --- Table
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4/Data/GATA3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4' / 'Data' / 'GATA3')
 result = adata_GATA3.uns['rank_genes_groups']
 groups = result['names'].dtype.names
 
@@ -101,10 +151,12 @@ Marker_genes_x_clus_df = pd.DataFrame(
     for group in groups for key in ['names', 'pvals']})
 
 Marker_genes_x_clus_df
-Marker_genes_x_clus_df.to_csv("Marker_genes_per_cluster.csv")
+Marker_genes_x_clus_df.to_csv(_output_path(_current_dir, "Marker_genes_per_cluster.csv"))
 
 # %% Gen exploration -- Paula's choice
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Subclustering/GATA3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Subclustering' / 'GATA3')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 sc.pl.stacked_violin(adata_GATA3, var_names=["CD3D", "CD4", "CD8A"], groupby='leiden_Sub_Res_0.3', title="Marcadores basicos de celulas T", save="1_Basic_T_markers.pdf") # 1. Basic T cell markers
 sc.pl.stacked_violin(adata_GATA3, var_names=["FOXP3", "IL2RA", "IL17A"], groupby='leiden_Sub_Res_0.3', title="Otros marcadores", save="2_Other_markers.pdf") # 2. Other markers
@@ -135,11 +187,13 @@ sc.pl.stacked_violin(adata_GATA3, var_names=["GATA3", "IL4"], groupby='leiden_Su
 gene_set_names = gseapy.get_library_name(organism='Human')
 print(gene_set_names)
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4/Data/GATA3")
-Marker_genes_x_clus_df = pd.read_csv("Marker_genes_per_cluster.csv", index_col=0)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4' / 'Data' / 'GATA3')
+Marker_genes_x_clus_df = pd.read_csv(_input_path(_current_dir, "Marker_genes_per_cluster.csv"), index_col=0)
 
 # %% Gene Set Analysis -- Analysis for clusters
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Subclustering/GATA3/GSA")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Subclustering' / 'GATA3' / 'GSA')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 
 # Define a list of clusters and their corresponding gene lists
 clusters = [
@@ -159,7 +213,7 @@ gene_set_databases = {
 }
 
 # Set the output directory
-output_directory = "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Subclustering/GATA3/GSA"
+output_directory = project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Subclustering' / 'GATA3' / 'GSA'
 
 # Loop through clusters and gene set databases
 for cluster in clusters:
@@ -167,7 +221,8 @@ for cluster in clusters:
     cluster_genes = cluster["genes"]
 
     for database_name, gene_set in gene_set_databases.items():
-        os.chdir(output_directory)
+        _current_dir = Path(output_directory)
+        _current_dir.mkdir(parents=True, exist_ok=True)
 
         # Perform gene set analysis
         enr_res = gseapy.enrichr(
@@ -180,7 +235,7 @@ for cluster in clusters:
         # Generate a bar plot for the results
         plot_title = f"{cluster_name}_{database_name}_2023"
         plot_filename = f"enr_res_{cluster_name}_{database_name}.png"
-        gseapy.barplot(enr_res.res2d, title=plot_title, ofname=plot_filename)
+        gseapy.barplot(enr_res.res2d, title=plot_title, ofname=_output_path(_current_dir, plot_filename))
 
 # %% Subclustering annotation
 cl_annotation_high = {
@@ -193,11 +248,13 @@ cl_annotation_high = {
 
 adata_GATA3.obs["manual_celltype_annotation_high"] = adata_GATA3.obs["leiden_Sub_Res_0.3"].map(cl_annotation_high)
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Subclustering/GATA3")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Subclustering' / 'GATA3')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 sc.pl.umap(adata_GATA3, color = ["manual_celltype_annotation_high"], frameon=False, save="manual_celltype_annotation_high_GATA3.png")
 
 # %% Save the subclustering information
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4/Data/GATA3")
-adata_GATA3.obs["manual_celltype_annotation_high"].to_csv("adata_GATA3_manual_celltype_annotation_high.csv")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4' / 'Data' / 'GATA3')
+adata_GATA3.obs["manual_celltype_annotation_high"].to_csv(_output_path(_current_dir, "adata_GATA3_manual_celltype_annotation_high.csv"))
 
 # %% End of script

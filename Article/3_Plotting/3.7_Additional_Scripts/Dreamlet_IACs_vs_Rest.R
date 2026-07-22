@@ -9,6 +9,96 @@
 
 ###############################################################################
 ###############################################################################
+
+## Command-line and environment path configuration
+
+.path_script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+.path_script_dir <- if (length(.path_script_arg) > 0) {
+    dirname(normalizePath(sub("^--file=", "", .path_script_arg[[1]]), mustWork = FALSE))
+} else {
+    getwd()
+}
+.find_article_dir <- function(path) {
+    current <- normalizePath(path, mustWork = FALSE)
+    repeat {
+        if (basename(current) == "Article") {
+            return(current)
+        }
+        article_child <- file.path(current, "Article")
+        if (dir.exists(article_child)) {
+            return(normalizePath(article_child, mustWork = FALSE))
+        }
+        parent <- dirname(current)
+        if (identical(parent, current)) {
+            return(normalizePath(path, mustWork = FALSE))
+        }
+        current <- parent
+    }
+}
+.article_dir <- .find_article_dir(.path_script_dir)
+.path_args <- if (interactive()) character() else commandArgs(trailingOnly = TRUE)
+.get_path_arg <- function(option, environment, fallback) {
+    equals_prefix <- paste0(option, "=")
+    equals_match <- grep(paste0("^", equals_prefix), .path_args, value = TRUE)
+    if (length(equals_match) > 0) {
+        return(sub(paste0("^", equals_prefix), "", equals_match[[1]]))
+    }
+    option_index <- match(option, .path_args)
+    if (!is.na(option_index)) {
+        if (option_index == length(.path_args)) {
+            stop(paste("Missing value for", option), call. = FALSE)
+        }
+        return(.path_args[[option_index + 1]])
+    }
+    environment_value <- Sys.getenv(environment, unset = "")
+    if (nzchar(environment_value)) {
+        return(environment_value)
+    }
+    fallback
+}
+if (!interactive() && any(.path_args %in% c("-h", "--help"))) {
+    cat("Path options:\n")
+    cat("  --project-dir DIR   Project root (env: CART_ATLAS_PROJECT_DIR; default: Article directory)\n")
+    cat("  --python-path FILE  Python executable for reticulate (env: CART_ATLAS_PYTHON; default: python3 on PATH)\n")
+    quit(status = 0)
+}
+project_dir <- normalizePath(
+    .get_path_arg("--project-dir", "CART_ATLAS_PROJECT_DIR", .article_dir),
+    mustWork = FALSE
+)
+if (!dir.exists(project_dir)) {
+    stop(
+        paste(
+            "Project directory does not exist:", project_dir,
+            "- set --project-dir or CART_ATLAS_PROJECT_DIR"
+        ),
+        call. = FALSE
+    )
+}
+python_path <- .get_path_arg("--python-path", "CART_ATLAS_PYTHON", Sys.which("python3"))
+if (!nzchar(python_path) || !file.exists(python_path)) {
+    stop(
+        paste(
+            "Python executable does not exist:", python_path,
+            "- set --python-path or CART_ATLAS_PYTHON"
+        ),
+        call. = FALSE
+    )
+}
+
+.input_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    if (!file.exists(path) && !dir.exists(path)) {
+        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    }
+    path
+}
+.output_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    path
+}
+
 ###############################################################################
 ###############################################################################
 
@@ -28,17 +118,17 @@ library(Cairo)
 library(SMFilter)
 
 library(reticulate)
-use_python("/usr/bin/python3")
+use_python(python_path)
 anndata <- reticulate::import("anndata")
 
-setwd("/home/scamara/data_a/scamara/Atlas/Codigo/Rocinante_DEA/Funciones")
-source("add_NTotalGenes.R")
+.current_dir <- file.path(project_dir, "Codigo", "Rocinante_DEA", "Funciones")
+source(.input_path(.current_dir, "add_NTotalGenes.R"))
 
 set.seed(2504)
 
 ##### Read files #####
-path <- "/home/scamara/data_a/scamara/Atlas/Input"
-file <- paste0(path, "/Python_scVI_adata_big_V4_state4.h5ad")
+path <- file.path(project_dir, "Input")
+file <- .input_path(path, "Python_scVI_adata_big_V4_state4.h5ad")
 adata <- anndata$read_h5ad(file)
 
 sce <- AnnData2SCE(adata, "counts", uns = FALSE, obsm = TRUE, obsp = TRUE)
@@ -95,8 +185,8 @@ res_1 <- topTable(fit_1, coef = "compare", number = 10)
 
 head(res_1)
 
-setwd("/home/scamara/data_a/scamara/Atlas/Resultados/IACs_vs_Rest")
-cairo_pdf("IACs_vs_Rest_Heatmap.pdf", width=10, height = 10)
+.current_dir <- file.path(project_dir, "Resultados", "IACs_vs_Rest")
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_Heatmap.pdf"), width=10, height = 10)
 dreamlet::plotHeatmap(df_cts, genes = rownames(res_1))#, assays=colnames(df_cts)[2:3])
 dev.off()
 
@@ -138,7 +228,7 @@ head(res.zenith)
 p1 <- plotZenithResults(res.zenith, sortByGeneset = FALSE)
 
 # Plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("IACs_vs_Rest_Biological_Process_1.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_Biological_Process_1.pdf"), width=10, height = 10)
 p1
 dev.off()
 
@@ -148,7 +238,7 @@ data_plot$GeneRatio <- data_plot$NGenes/data_plot$NTotalGenes
 data_plot$logFDR <- -log10(data_plot$FDR)
 
 # Horizontal dotplot
-cairo_pdf("IACs_vs_Rest_Biological_Process_2.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_Biological_Process_2.pdf"), width=10, height = 10)
 ggplot(data_plot, aes(x = assay, y = Geneset, size=logFDR, color = delta)) +
   geom_point() +
   scale_size(range = c(1, 10)) +
@@ -195,7 +285,7 @@ head(res.zenith)
 p2 <- plotZenithResults(res.zenith, sortByGeneset = FALSE)
 
 # Plot results, but with no limit based on the highest/lowest t-statistic
-pdf("IACs_vs_Rest_KEGG_2021_Human_1.pdf")
+pdf(.output_path(.current_dir, "IACs_vs_Rest_KEGG_2021_Human_1.pdf"))
 p2
 dev.off()
 
@@ -205,7 +295,7 @@ data_plot$GeneRatio <- data_plot$NGenes/data_plot$NTotalGenes
 data_plot$logFDR <- -log10(data_plot$FDR)
 
 # Horizontal dotplot
-pdf("IACs_vs_Rest_KEGG_2021_Human_2.pdf")
+pdf(.output_path(.current_dir, "IACs_vs_Rest_KEGG_2021_Human_2.pdf"))
 ggplot(data_plot, aes(x = assay, y = Geneset, size=logFDR, color = delta)) +
   geom_point() +
   scale_size(range = c(1, 10)) +
@@ -252,7 +342,7 @@ head(res.zenith)
 p3 <- plotZenithResults(res.zenith, sortByGeneset = FALSE)
 
 # Plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("IACs_vs_Rest_Reactome_2022_1.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_Reactome_2022_1.pdf"), width=10, height = 10)
 p3
 dev.off()
 
@@ -262,7 +352,7 @@ data_plot$GeneRatio <- data_plot$NGenes/data_plot$NTotalGenes
 data_plot$logFDR <- -log10(data_plot$FDR)
 
 # Horizontal dotplot
-cairo_pdf("IACs_vs_Rest_Reactome_2022_2.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_Reactome_2022_2.pdf"), width=10, height = 10)
 ggplot(data_plot, aes(x = assay, y = Geneset, size=logFDR, color = delta)) +
   geom_point() +
   scale_size(range = c(1, 10)) +
@@ -309,7 +399,7 @@ head(res.zenith)
 p4 <- plotZenithResults(res.zenith, sortByGeneset = FALSE)
 
 # Plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("IACs_vs_Rest_WikiPathway_2023_Human_1.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_WikiPathway_2023_Human_1.pdf"), width=10, height = 10)
 p4
 dev.off()
 
@@ -319,7 +409,7 @@ data_plot$GeneRatio <- data_plot$NGenes/data_plot$NTotalGenes
 data_plot$logFDR <- -log10(data_plot$FDR)
 
 # Horizontal dotplot
-cairo_pdf("IACs_vs_Rest_WikiPathway_2023_Human_2.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_WikiPathway_2023_Human_2.pdf"), width=10, height = 10)
 ggplot(data_plot, aes(x = assay, y = Geneset, size=logFDR, color = delta)) +
   geom_point() +
   scale_size(range = c(1, 10)) +
@@ -342,8 +432,8 @@ WikiPathway_2023_Human <- res.zenith
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
 # Custom genesets
-setwd("/home/scamara/data_a/scamara/Atlas/Input")
-Firmas_atlas_df <- read.csv("Firmas_Atlas.csv", header = TRUE, sep = ";")
+.current_dir <- file.path(project_dir, "Input")
+Firmas_atlas_df <- read.csv(.input_path(.current_dir, "Firmas_Atlas.csv"), header = TRUE, sep = ";")
 Firmas_atlas_df %>% colnames()
 
 Firma_Activation <- Firmas_atlas_df$Activation
@@ -455,8 +545,8 @@ head(res.zenith)
 p5 <- plotZenithResults(res.zenith, sortByGeneset = FALSE)
 
 # Plot results, but with no limit based on the highest/lowest t-statistic
-setwd("/home/scamara/data_a/scamara/Atlas/Resultados/IACs_vs_Rest")
-pdf("IACs_vs_Rest_Custom_Genesets_1.pdf")
+.current_dir <- file.path(project_dir, "Resultados", "IACs_vs_Rest")
+pdf(.output_path(.current_dir, "IACs_vs_Rest_Custom_Genesets_1.pdf"))
 p5
 dev.off()
 
@@ -466,7 +556,7 @@ data_plot$GeneRatio <- data_plot$NGenes/data_plot$NTotalGenes
 data_plot$logFDR <- -log10(data_plot$FDR)
 
 # Horizontal dotplot
-pdf("IACs_vs_Rest_Custom_Genesets_2.pdf")
+pdf(.output_path(.current_dir, "IACs_vs_Rest_Custom_Genesets_2.pdf"))
 ggplot(data_plot, aes(x = assay, y = Geneset, size=logFDR, color = delta)) +
   geom_point() +
   scale_size(range = c(1, 10)) +
@@ -521,14 +611,14 @@ WikiPathway_2023_Human_filtered <- WikiPathway_2023_Human[grep(patron_combinado,
 ## Final filtered
 Final_result <- rbind(Reactome_2022_filtered, WikiPathway_2023_Human_filtered)
 
-saveRDS(Final_result, "/home/scamara/data_a/scamara/Atlas/Input/Final_result_S7E.RDS")
+saveRDS(Final_result, .output_path(project_dir, "Input", "Final_result_S7E.RDS"))
 
 head(Final_result)
 
 p6 <- plotZenithResults(Final_result, Inf, Inf, sortByGeneset = FALSE)
 
 # Plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf("IACs_vs_Rest_Summarized_Result_1.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_Summarized_Result_1.pdf"), width=10, height = 10)
 p6
 dev.off()
 
@@ -538,7 +628,7 @@ data_plot$GeneRatio <- data_plot$NGenes/data_plot$NTotalGenes
 data_plot$logFDR <- -log10(data_plot$FDR)
 
 # Horizontal dotplot
-cairo_pdf("IACs_vs_Rest_Summarized_Result_2.pdf", width=10, height = 10)
+cairo_pdf(.output_path(.current_dir, "IACs_vs_Rest_Summarized_Result_2.pdf"), width=10, height = 10)
 ggplot(data_plot, aes(x = assay, y = Geneset, size=logFDR, color = delta)) +
   geom_point() +
   scale_size(range = c(1, 10)) +

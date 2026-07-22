@@ -10,6 +10,48 @@
 ###############################################################################
 ###############################################################################
 
+# %% Command-line and environment path configuration
+
+import argparse
+import os
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+_ARTICLE_DIR = next(
+    (candidate for candidate in (_SCRIPT_DIR, *_SCRIPT_DIR.parents) if candidate.name == "Article"),
+    _SCRIPT_DIR / "Article" if (_SCRIPT_DIR / "Article").is_dir() else _SCRIPT_DIR,
+)
+_path_parser = argparse.ArgumentParser()
+_path_parser.add_argument(
+    "--project-dir",
+    default=os.environ.get("CART_ATLAS_PROJECT_DIR", str(_ARTICLE_DIR)),
+    help="Root containing the repository-relative data, results, figure, model, and metadata subdirectories.",
+)
+_path_args, _unknown_path_args = _path_parser.parse_known_args()
+project_dir = Path(_path_args.project_dir).expanduser().resolve()
+if not project_dir.is_dir():
+    raise FileNotFoundError(
+        f"Project directory does not exist: {project_dir}. "
+        "Set --project-dir or CART_ATLAS_PROJECT_DIR."
+    )
+
+def _require_path(path):
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _input_path(directory, filename):
+    path = directory / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Required input path does not exist: {path}")
+    return path
+
+
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
 # %% Load all the needed libraries
 import scanpy as sc
 import os
@@ -22,17 +64,17 @@ from scanpy_cluster_proportions import get_cluster_proportions, plot_cluster_pro
 random.seed(2504)
 
 # %% Read files
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-adata = sc.read_h5ad("Python_scVI_adata_V4_state3.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+adata = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state3.h5ad"))
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4/Data/CD4")
-CD4_annotation_high = pd.read_csv("adata_CD4_manual_celltype_annotation_high.csv", index_col=0)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4' / 'Data' / 'CD4')
+CD4_annotation_high = pd.read_csv(_input_path(_current_dir, "adata_CD4_manual_celltype_annotation_high.csv"), index_col=0)
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4/Data/CD8")
-CD8_annotation_high = pd.read_csv("adata_CD8_manual_celltype_annotation_high.csv", index_col=0)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4' / 'Data' / 'CD8')
+CD8_annotation_high = pd.read_csv(_input_path(_current_dir, "adata_CD8_manual_celltype_annotation_high.csv"), index_col=0)
 
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Subclustering_V4/Data/GATA3")
-GATA3_annotation_high = pd.read_csv("adata_GATA3_manual_celltype_annotation_high.csv", index_col=0)
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Subclustering_V4' / 'Data' / 'GATA3')
+GATA3_annotation_high = pd.read_csv(_input_path(_current_dir, "adata_GATA3_manual_celltype_annotation_high.csv"), index_col=0)
 
 # %% Add annotation info to general table
 metadata = adata.obs.copy()
@@ -45,14 +87,16 @@ merged_df["manual_celltype_annotation_high"] = merged_df["manual_celltype_annota
 adata.obs = merged_df.copy()
 
 # %% Plot result
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/Plots/V4/Subclustering/Final")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Plots' / 'V4' / 'Subclustering' / 'Final')
+_current_dir.mkdir(parents=True, exist_ok=True)
+sc.settings.figdir = _current_dir
 sc.pl.umap(adata, color = ["manual_celltype_annotation_high"], frameon=False, palette=['#d21820', '#1869ff', '#008a00', '#f36dff', '#710079', '#aafb00', '#00bec2', '#ffa235', '#5d3d04', '#08008a', '#005d5d', '#9a7d82'], save="Atlas_V4_manual_celltype_annotation_high.png")
 sc.pl.umap(adata, color = ["manual_celltype_annotation_high"], frameon=False, palette=['#d21820', '#1869ff', '#008a00', '#f36dff', '#710079', '#aafb00', '#00bec2', '#ffa235', '#5d3d04', '#08008a', '#005d5d', '#9a7d82'], save="Atlas_V4_manual_celltype_annotation_high.pdf")
 sc.pl.umap(adata, color = ["manual_celltype_annotation_high"], frameon=False, palette=['#d21820', '#1869ff', '#008a00', '#f36dff', '#710079', '#aafb00', '#00bec2', '#ffa235', '#5d3d04', '#08008a', '#005d5d', '#9a7d82'], save="Atlas_V4_manual_celltype_annotation_high.svg")
 
 # %% Atlas colorized based on metadata -- Generation of datasets
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-sc_Metadata_to_python_v33 = pd.read_csv("sc_Metadata_to_python_v33_V4.csv", sep=";") # Check is the latest version of the metadata
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+sc_Metadata_to_python_v33 = pd.read_csv(_input_path(_current_dir, "sc_Metadata_to_python_v33_V4.csv"), sep=";") # Check is the latest version of the metadata
 sc_Metadata_to_python_v33.rename(columns={'Norm_Sample_Name': 'Product_norm'}, inplace=True)
 metadata_bis = adata.obs.copy()
 metadata_bis['row_number'] = range(1, len(metadata_bis) + 1)
@@ -133,7 +177,7 @@ adata2 = adata.copy()
 adata2.obs = merged_df.copy()
 
 # %% Save results to state 4
-os.chdir("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration/scVI/V4")
-adata2.write("Python_scVI_adata_V4_state4.h5ad")
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
+adata2.write(_output_path(_current_dir, "Python_scVI_adata_V4_state4.h5ad"))
 
 # %% End of script

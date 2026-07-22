@@ -10,6 +10,84 @@
 ###############################################################################
 ###############################################################################
 
+## Command-line and environment path configuration
+
+.path_script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+.path_script_dir <- if (length(.path_script_arg) > 0) {
+    dirname(normalizePath(sub("^--file=", "", .path_script_arg[[1]]), mustWork = FALSE))
+} else {
+    getwd()
+}
+.find_article_dir <- function(path) {
+    current <- normalizePath(path, mustWork = FALSE)
+    repeat {
+        if (basename(current) == "Article") {
+            return(current)
+        }
+        article_child <- file.path(current, "Article")
+        if (dir.exists(article_child)) {
+            return(normalizePath(article_child, mustWork = FALSE))
+        }
+        parent <- dirname(current)
+        if (identical(parent, current)) {
+            return(normalizePath(path, mustWork = FALSE))
+        }
+        current <- parent
+    }
+}
+.article_dir <- .find_article_dir(.path_script_dir)
+.path_args <- if (interactive()) character() else commandArgs(trailingOnly = TRUE)
+.get_path_arg <- function(option, environment, fallback) {
+    equals_prefix <- paste0(option, "=")
+    equals_match <- grep(paste0("^", equals_prefix), .path_args, value = TRUE)
+    if (length(equals_match) > 0) {
+        return(sub(paste0("^", equals_prefix), "", equals_match[[1]]))
+    }
+    option_index <- match(option, .path_args)
+    if (!is.na(option_index)) {
+        if (option_index == length(.path_args)) {
+            stop(paste("Missing value for", option), call. = FALSE)
+        }
+        return(.path_args[[option_index + 1]])
+    }
+    environment_value <- Sys.getenv(environment, unset = "")
+    if (nzchar(environment_value)) {
+        return(environment_value)
+    }
+    fallback
+}
+if (!interactive() && any(.path_args %in% c("-h", "--help"))) {
+    cat("Path options:\n")
+    cat("  --project-dir DIR   Project root (env: CART_ATLAS_PROJECT_DIR; default: Article directory)\n")
+    quit(status = 0)
+}
+project_dir <- normalizePath(
+    .get_path_arg("--project-dir", "CART_ATLAS_PROJECT_DIR", .article_dir),
+    mustWork = FALSE
+)
+if (!dir.exists(project_dir)) {
+    stop(
+        paste(
+            "Project directory does not exist:", project_dir,
+            "- set --project-dir or CART_ATLAS_PROJECT_DIR"
+        ),
+        call. = FALSE
+    )
+}
+
+.input_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    if (!file.exists(path) && !dir.exists(path)) {
+        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    }
+    path
+}
+.output_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    path
+}
+
 ##### Loading needed libraries #####
 library(tidyverse)
 library(Seurat)
@@ -44,8 +122,8 @@ Primera_vez <- FALSE
 ##### Loading the different datasets
 if (Primera_vez) {
     ## Xhangolli et al dataset
-    setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Xhangolli_et_al/RDS")
-    Seurat_list_Xhangolli <- readRDS("Normalized_CellRanger_Xhangolli_RDS.rds")
+    .current_dir <- file.path(project_dir, "Resultados", "Xhangolli_et_al", "RDS")
+    Seurat_list_Xhangolli <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Xhangolli_RDS.rds"))
 
     for (i in seq_along(Seurat_list_Xhangolli)) {
         Seurat_list_Xhangolli[[i]] <- RenameCells(Seurat_list_Xhangolli[[i]], new.names = paste0("Xha_", colnames(Seurat_list_Xhangolli[[i]])))
@@ -53,8 +131,8 @@ if (Primera_vez) {
     }
 
     ## Rodriguez-Marquez et al dataset
-    setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Rodriguez-Marquez_et_al/RDS")
-    Seurat_list_Rodriguez_Marquez <- readRDS("Normalized_CellRanger_Rodrguez_Marquez_RDS.rds")
+    .current_dir <- file.path(project_dir, "Resultados", "Rodriguez-Marquez_et_al", "RDS")
+    Seurat_list_Rodriguez_Marquez <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Rodrguez_Marquez_RDS.rds"))
 
     a <- names(Seurat_list_Rodriguez_Marquez)
 
@@ -68,8 +146,8 @@ if (Primera_vez) {
     colnames(Seurat_list_Rodriguez_Marquez[[1]])
 
     ## Wang et al dataset
-    setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Wang_et_al/RDS")
-    Seurat_list_Wang <- readRDS("Normalized_CellRanger_Wang_RDS.rds")
+    .current_dir <- file.path(project_dir, "Resultados", "Wang_et_al", "RDS")
+    Seurat_list_Wang <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Wang_RDS.rds"))
 
     names(Seurat_list_Wang) <- c("Wan_PD1", "Wan_PD2", "Wan_PD3", "Wan_SPD1", "Wan_SPD2", "Wan_SPD3")
 
@@ -81,8 +159,8 @@ if (Primera_vez) {
     colnames(Seurat_list_Wang[[1]])
 
     ## Lynn et al dataset
-    setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Lynn_et_al/RDS")
-    Seurat_list_Lynn <- readRDS("Normalized_CellRanger_Lynn_RDS.rds")
+    .current_dir <- file.path(project_dir, "Resultados", "Lynn_et_al", "RDS")
+    Seurat_list_Lynn <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Lynn_RDS.rds"))
 
     names(Seurat_list_Lynn) <- c("Lyn_Exp1_CD19", "Lyn_Exp1_GD2", "Lyn_Exp2_Cont", "Lyn_Exp2_JUN")
 
@@ -94,8 +172,8 @@ if (Primera_vez) {
     colnames(Seurat_list_Lynn[[1]])
 
     ## Boroughs et al dataset
-    setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/RDS")
-    Seurat_list_Boroughs <- readRDS("Normalized_CellRanger_Boroughs_RDS.rds")
+    .current_dir <- file.path(project_dir, "Resultados", "Boroughs_et_al", "RDS")
+    Seurat_list_Boroughs <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Boroughs_RDS.rds"))
 
     names(Seurat_list_Boroughs) <- c(
         "Bor_D1_28Z_CD19_Stim", "Bor_D1_28Z_No_Stim", "Bor_D1_BBZ_CD19_Stim", "Bor_D1_BBZ_No_Stim", "Bor_D1_Z_CD19_Stim", "Bor_D1_Z_No_Stim",
@@ -111,8 +189,8 @@ if (Primera_vez) {
     Seurat_list_Boroughs[[1]]@meta.data %>% colnames()
 
     ## Bai et al dataset --- Keep only healthy
-    setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Bai_et_al/RDS")
-    Seurat_list_Bai <- readRDS("Normalized_CellRanger_Bai_RDS.rds")
+    .current_dir <- file.path(project_dir, "Resultados", "Bai_et_al", "RDS")
+    Seurat_list_Bai <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Bai_RDS.rds"))
     Seurat_list_Bai <- c(Seurat_list_Bai$Healthy_donor_3T3_CD19_coculture, Seurat_list_Bai$Healthy_donor_3T3_MESO_coculture, Seurat_list_Bai$Healthy_donor_Basal_CAR_T)
     # names(Seurat_list_Bai) <- c("Healthy_donor_3T3_CD19_coculture", "Healthy_donor_3T3_MESO_coculture", "Healthy_donor_Basal_CAR_T")
 
@@ -138,17 +216,17 @@ if (Primera_vez) {
         # Save version with raw counts
         SaveH5Seurat(
             Seurat_merged,
-            filename = "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/scVI/Sin_GT_With_Python/Seurat_merged_RAW_for_Py.h5Seurat"
+            filename = file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "scVI", "Sin_GT_With_Python", "Seurat_merged_RAW_for_Py.h5Seurat")
         )
         Convert(
-            "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/scVI/Sin_GT_With_Python/Seurat_merged_RAW_for_Py.h5Seurat",
+            file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "scVI", "Sin_GT_With_Python", "Seurat_merged_RAW_for_Py.h5Seurat"),
             dest = "h5ad",
             overwrite = TRUE
         )
     }
 
     # Read CSV with annotations
-    annotations <- read.csv("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/cell_annotation_manual.csv")
+    annotations <- read.csv(.input_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "cell_annotation_manual.csv"))
 
     # Check cell_name is rowname
     rownames(annotations) <- annotations$cell_name
@@ -181,7 +259,7 @@ if (Primera_vez) {
     )
 
     # Plot UMAP
-    pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Merged_WO_integration/Sin_GT/WO_integ_Seurat.pdf")
+    pdf(.output_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Merged_WO_integration", "Sin_GT", "WO_integ_Seurat.pdf"))
     DimPlot(Seurat_merged,
         group.by = "orig.ident",
         reduction = "umap_wo_integ",
@@ -197,7 +275,7 @@ if (Primera_vez) {
         raster = FALSE
     )
 
-    pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Merged_WO_integration/Sin_GT/QC_metrics_WO_integ_Seurat.pdf")
+    pdf(.output_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Merged_WO_integration", "Sin_GT", "QC_metrics_WO_integ_Seurat.pdf"))
     p + plot_annotation(title = "Healthy data merged", theme = theme(plot.title = element_text(size = 16)))
     dev.off()
 
@@ -205,7 +283,7 @@ if (Primera_vez) {
 
 
     # Set path
-    path_base <- "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Merged_WO_integration/Sin_GT/Seurat_merged"
+    path_base <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Merged_WO_integration", "Sin_GT", "Seurat_merged")
 
     # Save .h5Seurat
     SaveH5Seurat(Seurat_merged, filename = paste0(path_base, ".h5Seurat"))
@@ -213,13 +291,13 @@ if (Primera_vez) {
     # Transform into .h5ad
     Convert(paste0(path_base, ".h5Seurat"), dest = "h5ad", overwrite = TRUE)
 
-    saveRDS(Seurat_merged, "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Merged_WO_integration/Sin_GT/Seurat_merged.RDS")
+    saveRDS(Seurat_merged, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Merged_WO_integration", "Sin_GT", "Seurat_merged.RDS"))
 } else {
-    setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Merged_WO_integration/Sin_GT")
-    Seurat_merged <- readRDS("Seurat_merged.RDS")
+    .current_dir <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Merged_WO_integration", "Sin_GT")
+    Seurat_merged <- readRDS(.input_path(.current_dir, "Seurat_merged.RDS"))
 }
 
-pdf("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Suplementarias/Suplementaria_S2_1_WO_integ_Seurat.pdf")
+pdf(.output_path(project_dir, "Resultados_Figuras", "Suplementarias", "Suplementaria_S2_1_WO_integ_Seurat.pdf"))
 DimPlot(Seurat_merged, reduction = "umap_wo_integ", group.by = "orig.ident", pt.size = 0.3, raster = FALSE, cols = palette) +
     theme(
         axis.title = element_blank(),
@@ -255,10 +333,10 @@ if (Primera_vez) {
 
     Seurat_harmony <- FindClusters(Seurat_harmony)
 
-    saveRDS(Seurat_harmony, "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Harmony/Sin_GT/Seurat_harmony.RDS")
+    saveRDS(Seurat_harmony, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Harmony", "Sin_GT", "Seurat_harmony.RDS"))
 
     # Set path
-    path_base <- "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Harmony/Sin_GT/Seurat_harmony"
+    path_base <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Harmony", "Sin_GT", "Seurat_harmony")
 
     # Save .h5Seurat
     SaveH5Seurat(Seurat_harmony, filename = paste0(path_base, ".h5Seurat"))
@@ -266,10 +344,10 @@ if (Primera_vez) {
     # Transform into .h5ad
     Convert(paste0(path_base, ".h5Seurat"), dest = "h5ad", overwrite = TRUE)
 } else {
-    Seurat_harmony <- readRDS("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Harmony/Sin_GT/Seurat_harmony.RDS")
+    Seurat_harmony <- readRDS(.input_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Harmony", "Sin_GT", "Seurat_harmony.RDS"))
 }
 
-pdf("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Suplementarias/Suplementaria_S2_3_Harmony.pdf")
+pdf(.output_path(project_dir, "Resultados_Figuras", "Suplementarias", "Suplementaria_S2_3_Harmony.pdf"))
 DimPlot(Seurat_harmony, reduction = "harmony_umap", group.by = "orig.ident", pt.size = 0.3, raster = FALSE, cols = palette) +
     theme(
         axis.title = element_blank(),
@@ -296,10 +374,10 @@ if (Primera_vez) {
 
     Seurat_liger <- RunUMAP(Seurat_liger, dims = 1:ncol(Seurat_liger[["iNMF"]]), reduction = "iNMF", reduction.name = "liger_umap")
 
-    saveRDS(Seurat_liger, "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/LIGER/Sin_GT/Seurat_liger.RDS")
+    saveRDS(Seurat_liger, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "LIGER", "Sin_GT", "Seurat_liger.RDS"))
 
     # Set path
-    path_base <- "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/LIGER/Sin_GT/Seurat_liger"
+    path_base <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "LIGER", "Sin_GT", "Seurat_liger")
 
     # Save .h5Seurat
     SaveH5Seurat(Seurat_liger, filename = paste0(path_base, ".h5Seurat"))
@@ -307,10 +385,10 @@ if (Primera_vez) {
     # Transform into .h5ad
     Convert(paste0(path_base, ".h5Seurat"), dest = "h5ad", overwrite = TRUE)
 } else {
-    Seurat_liger <- readRDS("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/LIGER/Sin_GT/Seurat_liger.RDS")
+    Seurat_liger <- readRDS(.input_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "LIGER", "Sin_GT", "Seurat_liger.RDS"))
 }
 
-pdf("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Suplementarias/Suplementaria_S2_4_LIGER.pdf")
+pdf(.output_path(project_dir, "Resultados_Figuras", "Suplementarias", "Suplementaria_S2_4_LIGER.pdf"))
 DimPlot(Seurat_liger, reduction = "liger_umap", group.by = "orig.ident", pt.size = 0.3, raster = FALSE, cols = palette) +
     theme(
         axis.title = element_blank(),
@@ -335,10 +413,10 @@ if (Primera_vez) {
     Seurat_STACAS_integ2 <- FindNeighbors(Seurat_STACAS_integ2, dims = 1:30)
     Seurat_STACAS_integ2 <- FindClusters(Seurat_STACAS_integ2)
 
-    saveRDS(Seurat_STACAS_integ2, "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/STACAS/Sin_GT/Seurat_STACAS_integ2.RDS")
+    saveRDS(Seurat_STACAS_integ2, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "STACAS", "Sin_GT", "Seurat_STACAS_integ2.RDS"))
 
     # Set path
-    path_base <- "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/STACAS/Sin_GT/Seurat_STACAS_integ2"
+    path_base <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "STACAS", "Sin_GT", "Seurat_STACAS_integ2")
 
     # Save .h5Seurat
     SaveH5Seurat(Seurat_STACAS_integ2, filename = paste0(path_base, ".h5Seurat"))
@@ -346,10 +424,10 @@ if (Primera_vez) {
     # Transform into .h5ad
     Convert(paste0(path_base, ".h5Seurat"), dest = "h5ad", overwrite = TRUE)
 } else {
-    Seurat_STACAS_integ2 <- readRDS("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/STACAS/Sin_GT/Seurat_STACAS_integ2.RDS")
+    Seurat_STACAS_integ2 <- readRDS(.input_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "STACAS", "Sin_GT", "Seurat_STACAS_integ2.RDS"))
 }
 
-pdf("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Suplementarias/Suplementaria_S2_5_STACAS.pdf")
+pdf(.output_path(project_dir, "Resultados_Figuras", "Suplementarias", "Suplementaria_S2_5_STACAS.pdf"))
 DimPlot(Seurat_STACAS_integ2, group.by = "orig.ident", pt.size = 0.3, raster = FALSE, cols = palette) +
     theme(
         axis.title = element_blank(),
@@ -386,10 +464,10 @@ if (Primera_vez) {
     Seurat_RPCA_integ <- RunUMAP(Seurat_RPCA_integ, reduction = "RPCA_pca", dims = 1:30, reduction.name = "RPCA_umap")
     Seurat_RPCA_integ <- FindNeighbors(Seurat_RPCA_integ, reduction = "RPCA_pca", dims = 1:30)
     Seurat_RPCA_integ <- FindClusters(Seurat_RPCA_integ)
-    saveRDS(Seurat_RPCA_integ, "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Seurat_RPCA/Sin_GT/Seurat_RPCA_integ.RDS")
+    saveRDS(Seurat_RPCA_integ, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Seurat_RPCA", "Sin_GT", "Seurat_RPCA_integ.RDS"))
 
     # Set path
-    path_base <- "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Seurat_RPCA/Sin_GT/Seurat_RPCA_integ"
+    path_base <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Seurat_RPCA", "Sin_GT", "Seurat_RPCA_integ")
 
     # Save .h5Seurat
     SaveH5Seurat(Seurat_RPCA_integ, filename = paste0(path_base, ".h5Seurat"))
@@ -397,10 +475,10 @@ if (Primera_vez) {
     # Transform into .h5ad
     Convert(paste0(path_base, ".h5Seurat"), dest = "h5ad", overwrite = TRUE)
 } else {
-    Seurat_RPCA_integ <- readRDS("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/Seurat_RPCA/Sin_GT/Seurat_RPCA_integ.RDS")
+    Seurat_RPCA_integ <- readRDS(.input_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Seurat_RPCA", "Sin_GT", "Seurat_RPCA_integ.RDS"))
 }
 
-pdf("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Suplementarias/Suplementaria_S2_6_RPCA_Seurat.pdf")
+pdf(.output_path(project_dir, "Resultados_Figuras", "Suplementarias", "Suplementaria_S2_6_RPCA_Seurat.pdf"))
 DimPlot(Seurat_RPCA_integ, reduction = "RPCA_umap", group.by = "orig.ident", pt.size = 0.3, raster = FALSE, cols = palette) +
     theme(
         axis.title = element_blank(),
@@ -430,10 +508,10 @@ if (Primera_vez) {
     Seurat_fastMNN2 <- FindNeighbors(Seurat_fastMNN2, reduction = "mnn", dims = 1:30)
     Seurat_fastMNN2 <- FindClusters(Seurat_fastMNN2)
 
-    saveRDS(Seurat_fastMNN2, "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/fastMNN/Sin_GT/Seurat_fastMNN2.RDS")
+    saveRDS(Seurat_fastMNN2, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "fastMNN", "Sin_GT", "Seurat_fastMNN2.RDS"))
 
     # Set path
-    path_base <- "/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/fastMNN/Sin_GT/Seurat_fastMNN2"
+    path_base <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "fastMNN", "Sin_GT", "Seurat_fastMNN2")
 
     # Save .h5Seurat
     SaveH5Seurat(Seurat_fastMNN2, filename = paste0(path_base, ".h5Seurat"))
@@ -441,10 +519,10 @@ if (Primera_vez) {
     # Transform into .h5ad
     Convert(paste0(path_base, ".h5Seurat"), dest = "h5ad", overwrite = TRUE)
 } else {
-    Seurat_fastMNN2 <- readRDS("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Joined_datasets/Integration_methods_lab/fastMNN/Sin_GT/Seurat_fastMNN2.RDS")
+    Seurat_fastMNN2 <- readRDS(.input_path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "fastMNN", "Sin_GT", "Seurat_fastMNN2.RDS"))
 }
 
-pdf("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Suplementarias/Suplementaria_S2_7_fastMNN2.pdf")
+pdf(.output_path(project_dir, "Resultados_Figuras", "Suplementarias", "Suplementaria_S2_7_fastMNN2.pdf"))
 DimPlot(Seurat_fastMNN2, reduction = "umap", group.by = "orig.ident", pt.size = 0.3, raster = FALSE, cols = palette) +
     theme(
         axis.title = element_blank(),

@@ -10,6 +10,83 @@
 ###############################################################################
 ###############################################################################
 
+## Command-line and environment path configuration
+
+.path_script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+.path_script_dir <- if (length(.path_script_arg) > 0) {
+    dirname(normalizePath(sub("^--file=", "", .path_script_arg[[1]]), mustWork = FALSE))
+} else {
+    getwd()
+}
+.find_article_dir <- function(path) {
+    current <- normalizePath(path, mustWork = FALSE)
+    repeat {
+        if (basename(current) == "Article") {
+            return(current)
+        }
+        article_child <- file.path(current, "Article")
+        if (dir.exists(article_child)) {
+            return(normalizePath(article_child, mustWork = FALSE))
+        }
+        parent <- dirname(current)
+        if (identical(parent, current)) {
+            return(normalizePath(path, mustWork = FALSE))
+        }
+        current <- parent
+    }
+}
+.article_dir <- .find_article_dir(.path_script_dir)
+.path_args <- if (interactive()) character() else commandArgs(trailingOnly = TRUE)
+.get_path_arg <- function(option, environment, fallback) {
+    equals_prefix <- paste0(option, "=")
+    equals_match <- grep(paste0("^", equals_prefix), .path_args, value = TRUE)
+    if (length(equals_match) > 0) {
+        return(sub(paste0("^", equals_prefix), "", equals_match[[1]]))
+    }
+    option_index <- match(option, .path_args)
+    if (!is.na(option_index)) {
+        if (option_index == length(.path_args)) {
+            stop(paste("Missing value for", option), call. = FALSE)
+        }
+        return(.path_args[[option_index + 1]])
+    }
+    environment_value <- Sys.getenv(environment, unset = "")
+    if (nzchar(environment_value)) {
+        return(environment_value)
+    }
+    fallback
+}
+if (!interactive() && any(.path_args %in% c("-h", "--help"))) {
+    cat("Path options:\n")
+    cat("  --project-dir DIR   Project root (env: CART_ATLAS_PROJECT_DIR; default: Article directory)\n")
+    quit(status = 0)
+}
+project_dir <- normalizePath(
+    .get_path_arg("--project-dir", "CART_ATLAS_PROJECT_DIR", .article_dir),
+    mustWork = FALSE
+)
+if (!dir.exists(project_dir)) {
+    stop(
+        paste(
+            "Project directory does not exist:", project_dir,
+            "- set --project-dir or CART_ATLAS_PROJECT_DIR"
+        ),
+        call. = FALSE
+    )
+}
+
+.input_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    if (!file.exists(path) && !dir.exists(path)) {
+        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    }
+    path
+}
+.output_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    path
+}
 
 ##### Load required libraries #####
 library(DropletUtils)
@@ -27,14 +104,14 @@ set.seed(2504)
 
 
 ###### Data loading from CellRanger ######
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Count_Matrices/Cell_Ranger")
-dir(pattern = "^run_")
-Patient_list <- gsub("_Boroughs_et_al", "", gsub("run_", "", dir()[dir() %>% grep(pattern = "^run_")]))
+.current_dir <- file.path(project_dir, "Resultados", "Boroughs_et_al", "Count_Matrices", "Cell_Ranger")
+dir(path = .current_dir, pattern = "^run_")
+Patient_list <- gsub("_Boroughs_et_al", "", gsub("run_", "", dir(path = .current_dir)[dir(path = .current_dir) %>% grep(pattern = "^run_")]))
 Patient_list
 
 Seurat_list_Boroughs <- list()
 for (contador in Patient_list) {
-    cell_ranger_dir <- paste0("./run_", contador, "_Boroughs_et_al/outs/filtered_feature_bc_matrix")
+    cell_ranger_dir <- file.path(.current_dir, paste0("run_", contador, "_Boroughs_et_al/outs/filtered_feature_bc_matrix"))
     cell_ranger_data <- Read10X(data.dir = cell_ranger_dir)
     Seurat_list_Boroughs[[contador]] <- CreateSeuratObject(counts = cell_ranger_data, project = "Boroughs_et_al", min.features = 200, min.cells = 3)
     Seurat_list_Boroughs[[contador]]$Product <- contador
@@ -107,7 +184,7 @@ Max_mito_ratio <- c(0.067, 0.065, 0.07, 0.05, 0.08, 0.07, 0.065, 0.065, 0.065, 0
 colores <- hue_pal()(length(Seurat_list_Boroughs))
 
 # Visualize the number of cell counts per sample
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_Ncells.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_Ncells.pdf"))
 merged_metadata_df %>%
     ggplot(aes(x = Product, fill = Product)) +
     geom_bar() +
@@ -126,7 +203,7 @@ dev.off()
 counter <- 0
 sce_Seurat_list_Boroughs <- list()
 metadata_bcrank <- list()
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_Knee_plots.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_Knee_plots.pdf"))
 for (i in Patient_list) {
     counter <- counter + 1
     sce_Seurat_list_Boroughs[[i]] <- as.SingleCellExperiment(Seurat_list_Boroughs[[i]])
@@ -165,7 +242,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         )
 }
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_UMIs_per_cell.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_UMIs_per_cell.pdf"))
 pt_h
 dev.off()
 rm(i, pt_h)
@@ -186,7 +263,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         )
 }
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_Genes_per_cell.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_Genes_per_cell.pdf"))
 pt_h
 dev.off()
 rm(i, pt_h)
@@ -207,13 +284,13 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         )
 }
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_Mito_ratio_per_cell.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_Mito_ratio_per_cell.pdf"))
 pt_h
 dev.off()
 rm(i, pt_h)
 
 # Visualize the distribution of complexity per cell
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_Complexity_per_cell.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_Complexity_per_cell.pdf"))
 merged_metadata_df %>%
     ggplot(aes(color = Product, x = log10GenesPerUMI, fill = Product)) +
     geom_density(alpha = 0.2) +
@@ -226,7 +303,7 @@ p_Vln <- list()
 for (cont in seq_along(Seurat_list_Boroughs)) {
     p_Vln[[cont]] <- VlnPlot(Seurat_list_Boroughs[[cont]], features = c("nCount_RNA", "nFeature_RNA", "mitoRatio"), col = colores[cont], pt.size = 0, group.by = "Product")
 }
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_Vln_plots.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_Vln_plots.pdf"))
 p_Vln
 dev.off()
 
@@ -247,7 +324,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         geom_vline(xintercept = Max_counts[i], col = "black") +
         geom_hline(yintercept = Min_feat[i], col = "black")
 }
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_nGenes_vs_nUMI.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_nGenes_vs_nUMI.pdf"))
 p1
 dev.off()
 
@@ -261,7 +338,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         theme_classic() +
         ggtitle(paste0(Patient_list[i]))
 }
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Pre_QC_mitoRatio_vs_nUMI.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Pre_QC_mitoRatio_vs_nUMI.pdf"))
 p1
 dev.off()
 
@@ -340,7 +417,7 @@ for (i in seq_along(Seurat_doublets_finder)) {
         )
 }
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Doublet_Finder_pK_calculation.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Doublet_Finder_pK_calculation.pdf"))
 h1
 dev.off()
 rm(i, h1)
@@ -358,7 +435,7 @@ for (i in seq_along(Seurat_doublets_finder)) {
     )
 }
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Doublet_Finder_Classification.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Doublet_Finder_Classification.pdf"))
 h2
 dev.off()
 rm(i, h2)
@@ -393,7 +470,7 @@ rm(cont)
 merged_metadata_df <- bind_rows(merged_metadata_df)
 
 # Visualize the number of cell counts per sample
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Post_QC_Ncells.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Post_QC_Ncells.pdf"))
 merged_metadata_df %>%
     ggplot(aes(x = Product, fill = Product)) +
     geom_bar() +
@@ -422,7 +499,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         )
 }
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Post_QC_UMIs_per_cell.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Post_QC_UMIs_per_cell.pdf"))
 pt_h
 dev.off()
 rm(i, pt_h)
@@ -440,7 +517,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         )
 }
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Post_QC_Genes_per_cell.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Post_QC_Genes_per_cell.pdf"))
 pt_h
 dev.off()
 rm(i, pt_h)
@@ -460,7 +537,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         )
 }
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Post_QC_Mito_ratio_per_cell.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Post_QC_Mito_ratio_per_cell.pdf"))
 pt_h
 dev.off()
 rm(i, pt_h)
@@ -470,7 +547,7 @@ p_Vln <- list()
 for (cont in seq_along(Seurat_list_Boroughs)) {
     p_Vln[[cont]] <- VlnPlot(Seurat_list_Boroughs[[cont]], features = c("nCount_RNA", "nFeature_RNA", "mitoRatio"), col = colores[cont], pt.size = 0, group.by = "Product")
 }
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Post_QC_Vln_plots.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Post_QC_Vln_plots.pdf"))
 p_Vln
 dev.off()
 
@@ -488,21 +565,21 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         theme_classic() +
         ggtitle(paste0(Patient_list[i]))
 }
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Exploratory_analysis/Post_QC_nGenes_vs_nUMI.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Exploratory_analysis", "Post_QC_nGenes_vs_nUMI.pdf"))
 p1
 dev.off()
 
 rm(i, p1)
 
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/RDS")
-saveRDS(Seurat_list_Boroughs, file = "PostQC_CellRanger_Boroughs_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Boroughs_et_al", "RDS")
+saveRDS(Seurat_list_Boroughs, file = .output_path(.current_dir, "PostQC_CellRanger_Boroughs_RDS.rds"))
 
 ##### Normalization #####
 
 # rm(list = ls())
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/RDS")
-Seurat_list_Boroughs <- readRDS("PostQC_CellRanger_Boroughs_RDS.rds")
-load("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Codigo/Gene_Markers_Info/cycle.rda")
+.current_dir <- file.path(project_dir, "Resultados", "Boroughs_et_al", "RDS")
+Seurat_list_Boroughs <- readRDS(.input_path(.current_dir, "PostQC_CellRanger_Boroughs_RDS.rds"))
+load(.input_path(project_dir, "Codigo", "Gene_Markers_Info", "cycle.rda"))
 
 for (i in seq_along(Seurat_list_Boroughs)) {
     Seurat_list_Boroughs[[i]] <- NormalizeData(Seurat_list_Boroughs[[i]])
@@ -521,12 +598,12 @@ for (i in seq_along(Seurat_list_Boroughs)) {
 }
 rm(i)
 
-saveRDS(Seurat_list_Boroughs, file = "Normalized_CellRanger_Boroughs_RDS.rds")
+saveRDS(Seurat_list_Boroughs, file = .output_path(.current_dir, "Normalized_CellRanger_Boroughs_RDS.rds"))
 
 
 ##### Merge ---- Worst case scenario #####
-setwd("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/RDS")
-Seurat_list_Boroughs <- readRDS("Normalized_CellRanger_Boroughs_RDS.rds")
+.current_dir <- file.path(project_dir, "Resultados", "Boroughs_et_al", "RDS")
+Seurat_list_Boroughs <- readRDS(.input_path(.current_dir, "Normalized_CellRanger_Boroughs_RDS.rds"))
 
 Seurat_list_Boroughs_2 <- merge(x = Seurat_list_Boroughs[[1]], y = c(Seurat_list_Boroughs[[2]], Seurat_list_Boroughs[[3]],
     Seurat_list_Boroughs[[4]], Seurat_list_Boroughs[[5]], Seurat_list_Boroughs[[6]],
@@ -558,7 +635,7 @@ Seurat_list_Boroughs <- RunUMAP(Seurat_list_Boroughs,
 )
 
 # Plot UMAP
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Worst_case_scenario/WO_integ_Seurat.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Worst_case_scenario", "WO_integ_Seurat.pdf"))
 DimPlot(Seurat_list_Boroughs,
     group.by = "Product",
     reduction = "umap_wo_integ"
@@ -572,7 +649,7 @@ p <- FeaturePlot(Seurat_list_Boroughs,
     order = TRUE
 )
 
-pdf("/mnt/md0/data/scamara/Atlas_Mieloma_Multiple/Resultados/Boroughs_et_al/Plots/Worst_case_scenario/QC_metrics_WO_integ_Seurat.pdf")
+pdf(.output_path(project_dir, "Resultados", "Boroughs_et_al", "Plots", "Worst_case_scenario", "QC_metrics_WO_integ_Seurat.pdf"))
 p + plot_annotation(title = paste0(Seurat_list_Boroughs@meta.data$orig.ident %>% unique()), theme = theme(plot.title = element_text(size = 16)))
 dev.off()
 

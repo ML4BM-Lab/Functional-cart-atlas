@@ -2,124 +2,209 @@
 ###############################################################################
 
 # Program: Supplementary_S4D.R
-# Author: Nuria Planell - Sergio Cámara Peña
-# Date: 30/09/2025
+# Author: Sergio Cámara Peña
+# Date: 04/06/2025
 # Version: FINAL
-# Machine: Margaret
+# Machine: Rocinante
 
 ###############################################################################
 ###############################################################################
 
-# scProportion test output summary plot
+## Command-line and environment path configuration
 
-library(dplyr)
-library(readr)
-
-setwd("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Data")
-
-# Go to scProportiontest_S4D.py scripts to generate these files
-wy <- read_csv("wy.csv") %>% mutate(Contrast = "wy")
-my <- read_csv("my.csv") %>% mutate(Contrast = "my")
-wo <- read_csv("wo.csv") %>% mutate(Contrast = "wo")
-mo <- read_csv("mo.csv") %>% mutate(Contrast = "mo")
-
-data_to_plot <- bind_rows(wy, my, wo, mo)
-
-data_to_plot$log10_p <- log10(data_to_plot$adj_p_value) * -1
-dim(data_to_plot)
-data_to_plot <- data_to_plot[data_to_plot["cell_type"] != "Ribosomal enriched", ]
-dim(data_to_plot)
-data_to_plot <- data_to_plot[data_to_plot["cell_type"] != "Monocyte-like T cells", ]
-dim(data_to_plot)
-data_to_plot <- data_to_plot[data_to_plot["cell_type"] != "CD4 cytotoxic", ]
-dim(data_to_plot)
-data_to_plot <- data_to_plot[data_to_plot["cell_type"] != "Apoptotic T cells", ]
-dim(data_to_plot)
-data_to_plot <- data_to_plot[data_to_plot["cell_type"] != "Proliferative T cells", ]
-dim(data_to_plot)
-
-# Define the order you want (from bottom to top on the plot)
-desired_order <- c(
-  "Regulatory T cells",
-  "CD8 memory",
-  "CD8 effector memory",
-  "CD4 central memory",
-  "CD4 effector memory",
-  "CD8 cytotoxic"
+.path_script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+.path_script_dir <- if (length(.path_script_arg) > 0) {
+    dirname(normalizePath(sub("^--file=", "", .path_script_arg[[1]]), mustWork = FALSE))
+} else {
+    getwd()
+}
+.find_article_dir <- function(path) {
+    current <- normalizePath(path, mustWork = FALSE)
+    repeat {
+        if (basename(current) == "Article") {
+            return(current)
+        }
+        article_child <- file.path(current, "Article")
+        if (dir.exists(article_child)) {
+            return(normalizePath(article_child, mustWork = FALSE))
+        }
+        parent <- dirname(current)
+        if (identical(parent, current)) {
+            return(normalizePath(path, mustWork = FALSE))
+        }
+        current <- parent
+    }
+}
+.article_dir <- .find_article_dir(.path_script_dir)
+.path_args <- if (interactive()) character() else commandArgs(trailingOnly = TRUE)
+.get_path_arg <- function(option, environment, fallback) {
+    equals_prefix <- paste0(option, "=")
+    equals_match <- grep(paste0("^", equals_prefix), .path_args, value = TRUE)
+    if (length(equals_match) > 0) {
+        return(sub(paste0("^", equals_prefix), "", equals_match[[1]]))
+    }
+    option_index <- match(option, .path_args)
+    if (!is.na(option_index)) {
+        if (option_index == length(.path_args)) {
+            stop(paste("Missing value for", option), call. = FALSE)
+        }
+        return(.path_args[[option_index + 1]])
+    }
+    environment_value <- Sys.getenv(environment, unset = "")
+    if (nzchar(environment_value)) {
+        return(environment_value)
+    }
+    fallback
+}
+if (!interactive() && any(.path_args %in% c("-h", "--help"))) {
+    cat("Path options:\n")
+    cat("  --project-dir DIR   Project root (env: CART_ATLAS_PROJECT_DIR; default: Article directory)\n")
+    cat("  --python-path FILE  Python executable for reticulate (env: CART_ATLAS_PYTHON; default: python3 on PATH)\n")
+    quit(status = 0)
+}
+project_dir <- normalizePath(
+    .get_path_arg("--project-dir", "CART_ATLAS_PROJECT_DIR", .article_dir),
+    mustWork = FALSE
 )
+if (!dir.exists(project_dir)) {
+    stop(
+        paste(
+            "Project directory does not exist:", project_dir,
+            "- set --project-dir or CART_ATLAS_PROJECT_DIR"
+        ),
+        call. = FALSE
+    )
+}
+python_path <- .get_path_arg("--python-path", "CART_ATLAS_PYTHON", Sys.which("python3"))
+if (!nzchar(python_path) || !file.exists(python_path)) {
+    stop(
+        paste(
+            "Python executable does not exist:", python_path,
+            "- set --python-path or CART_ATLAS_PYTHON"
+        ),
+        call. = FALSE
+    )
+}
 
-# Apply it to the relevant subset
-data_to_plot$cell_type <- factor(data_to_plot$cell_type, levels = desired_order)
+.input_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    if (!file.exists(path) && !dir.exists(path)) {
+        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    }
+    path
+}
+.output_path <- function(directory, ...) {
+    path <- file.path(directory, ...)
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    path
+}
 
-# Plot
-library(ggplot2)
-library(grid)
+##### Import libraries #####
+library(tidyverse)
+library(cowplot)
+library(patchwork)
+library(dreamlet)
+library(SingleCellExperiment)
+library(zenith)
+library(zellkonverter)
+library(kableExtra)
+library(scattermore)
+library(EnrichmentBrowser)
+library(GSEABase)
+library(Cairo)
+library(SMFilter)
+library(scater)
+library(coin)
+library(see)
 
-# Set PATH to save figs
-setwd("/home/scamara/data/scamara/Atlas_Mieloma_Multiple/Resultados_Figuras/Suplementarias")
+library(reticulate)
+use_python(python_path)
+anndata <- reticulate::import("anndata")
 
-contrast_colors <- c(mo = "#1f77b4", my = "#7ec8d2", wo = "#e31a1c", wy = "#fbb4b9")
+.current_dir <- file.path(project_dir, "Codigo", "Rocinante_DEA", "Funciones")
+source(.input_path(.current_dir, "add_NTotalGenes.R"))
 
-##### Man graph #####
-hombres <- data_to_plot[data_to_plot$Contrast %in% c("mo", "my"), ]
+## Set random seed
+set.seed(2504)
 
-cairo_pdf("S4D_man.pdf", width = 10, height = 8)
-ggplot(hombres, aes(x = observed_diff, y = cell_type, color = Contrast, size = log10_p)) +
-  geom_point() +
-  scale_color_manual(
-    values = contrast_colors,
-    labels = c("Men (>60 years old)", "Men (40-60 years old)")
+# Go to AUCell_CD8_IL10_CR.R and AUCell_CD8_IL10_NR.R if you want to change something of the code - In there you will find all additional graphics and tests.
+
+.current_dir <- file.path(project_dir, "Resultados", "AUCell_CD8_IL10_NR")
+auc_long_NR <- readRDS(.input_path(.current_dir, "auc_long_NR.RDS"))
+
+.current_dir <- file.path(project_dir, "Resultados", "AUCell_CD8_IL10_CR")
+auc_long_CR <- readRDS(.input_path(.current_dir, "auc_long_CR.RDS"))
+
+# Define which categories do I want to keep
+tipos_keep <- c("CD4 central memory", "CD4 effector memory", "CD8 cytotoxic", "CD8 effector memory", "Proliferative T cells", "Regulatory T cells")
+
+auc_long_NR <- auc_long_NR %>%
+  dplyr::filter(Cell_Type %in% tipos_keep)
+
+auc_long_CR <- auc_long_CR %>%
+  dplyr::filter(Cell_Type %in% tipos_keep)
+
+# Add condition labels
+auc_long_NR$Group <- "NR"
+auc_long_CR$Group <- "CR"
+
+# Combine
+auc_combined <- rbind(auc_long_NR, auc_long_CR)
+
+## Wilcoxon additional test
+wilcoxon_results <- auc_combined %>%
+  group_by(Cell_Type) %>%
+  summarise(
+    p_value = wilcox.test(AUC[Group == "NR"], AUC[Group == "CR"])$p.value,
+    NR_median = median(AUC[Group == "NR"]),
+    CR_median = median(AUC[Group == "CR"]),
+    N_NR = sum(Group == "NR"),
+    N_CR = sum(Group == "CR")
+  ) %>%
+  mutate(p_adj = p.adjust(p_value, method = "BH"))
+
+wilcoxon_results <- wilcoxon_results %>%
+  mutate(delta_median = NR_median - CR_median)
+
+print(wilcoxon_results)
+
+# Save plot as PDF
+.current_dir <- file.path(project_dir, "Figuras", "Suplementarias")
+cairo_pdf(.output_path(.current_dir, "S4D.pdf"), width = 12, height = 10)
+
+ggplot(auc_combined, aes(x = Cell_Type, y = AUC, fill = Group)) +
+  geom_violinhalf(
+    data = subset(auc_combined, Group == "NR"),
+    alpha = 0.6, color = NA
   ) +
-  scale_size(range = c(3, 10)) +
-  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
-  theme_minimal() +
-  xlab("LogFC") +
-  ylab("") +
-  labs(size = "-log10(adj.p-value)", color = "NR vs CR contrast") +
-  coord_cartesian(ylim = c(0.5, length(unique(hombres$cell_type)) + 0.5), xlim = c(-2.5, 2.5)) +
+  geom_violinhalf(
+    data = subset(auc_combined, Group == "CR"),
+    alpha = 0.6, color = NA, flip = TRUE
+  ) +
+  stat_summary(
+    fun.data = "mean_sdl", fun.args = list(mult = 1),
+    geom = "pointrange", position = position_dodge(width = 0.6),
+    color = "black"
+  ) +
+  scale_fill_manual(
+    values = c("CR" = "#006400", "NR" = "#fc8d62")
+  ) +
+  coord_cartesian(ylim = c(0, 0.27)) +
+  theme_bw() +
   theme(
-    axis.text.x = element_text(size = 20, angle = 0, hjust = .5, vjust = .5),
-    axis.text.y = element_text(size = 20, angle = 0, hjust = 1, vjust = 0),
-    axis.title.x = element_text(size = 20, angle = 0, hjust = .5, vjust = 0),
-    axis.title.y = element_text(size = 20, angle = 90, hjust = .5, vjust = .5),
-    legend.text = element_text(size = 15),
-    legend.title = element_text(size = 16)
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+    axis.text.y = element_text(size = 14),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    plot.title = element_text(size = 18, face = "bold"),
+    strip.text.x = element_text(size = 14),
+    panel.grid = element_blank(),
+    legend.position = "right"
   ) +
-  guides(
-    color = guide_legend(override.aes = list(size = 4)),
-    size = guide_legend(title = "-log10(adj.p-value)")
-  )
+  labs(x = "Cell Type", y = "AUC", title = "", fill = "Response")
+
 dev.off()
 
-##### Woman graph #####
-mujeres <- data_to_plot[data_to_plot$Contrast %in% c("wo", "wy"), ]
-
-cairo_pdf("S4D_woman.pdf", width = 10, height = 8)
-ggplot(mujeres, aes(x = observed_diff, y = cell_type, color = Contrast, size = log10_p)) +
-  geom_point() +
-  scale_color_manual(
-    values = contrast_colors,
-    labels = c("Women (>60 years old)", "Women (40-60 years old)")
-  ) +
-  scale_size(range = c(3, 10)) +
-  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
-  theme_minimal() +
-  xlab("LogFC") +
-  ylab("") +
-  labs(size = "-log10(adj.p-value)", color = "NR vs CR contrast") +
-  coord_cartesian(ylim = c(0.5, length(unique(mujeres$cell_type)) + 0.5), xlim = c(-2.5, 2.5)) +
-  theme(
-    axis.text.x = element_text(size = 20, angle = 0, hjust = .5, vjust = .5),
-    axis.text.y = element_text(size = 20, angle = 0, hjust = 1, vjust = 0),
-    axis.title.x = element_text(size = 20, angle = 0, hjust = .5, vjust = 0),
-    axis.title.y = element_text(size = 20, angle = 90, hjust = .5, vjust = .5),
-    legend.text = element_text(size = 15),
-    legend.title = element_text(size = 16)
-  ) +
-  guides(
-    color = guide_legend(override.aes = list(size = 4)),
-    size = guide_legend(title = "-log10(adj.p-value)")
-  )
-dev.off()
-
-##### END OF SCRIPT #####
+################################
+######## END OF SCRIPT #########
+################################
