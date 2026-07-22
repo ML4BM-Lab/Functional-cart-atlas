@@ -16,21 +16,88 @@ The code provided in this repository enables full reproduction of the **CAR-T Ce
 ## 🗄️ Repository Structure
 
 ```
-1_Data_Preprocessing/
-└─ Scripts to process individual datasets either from Cell Ranger, Drop-seq or authors' count matrix up to QC-filtered objects (prior to integration).
+.github/workflows/
+└─ docker-smoke.yml                  GitHub Actions Docker smoke-test workflow.
 
-2_Integration_and_Annotation/
-└─ Integration of all datasets with scVI and manual cell type annotation using curated markers.
+Article/
+├─ 1_Data_Preprocessing/             Individual dataset processing and quality control.
+├─ 2_Integration_and_Annotation/     scVI integration and manual cell type annotation.
+├─ 3_Plotting/                       Manuscript figures and tables.
+├─ 4_New_Data_Integration/           New-dataset integration and scArches-scANVI transfer.
+└─ 5_Atlas_Sharing/                  ShinyCell, scVI-hub and UCSC Cell Browser resources.
 
-3_Plotting/
-└─ Code used to generate all figures and tables for the manuscript (main and supplementary).
+bioRxiv-deprecated/                  Archived code associated with the earlier preprint version.
 
-4_New_Data_Integration/
-└─ Workflow to incorporate new datasets into the atlas (from data preprocessing to scArches-scANVI model transfer - Example with Jordana's dataset).
+docker/
+├─ marg/                             Margaret Python and R Dockerfiles.
+├─ roci/                             Rocinante Python and R Dockerfiles.
+├─ smoke-tests/                      Local and CI smoke tests for the four images.
+├─ images.lock                       Immutable GHCR image references used by CI.
+└─ README_DOCKER.md                  Detailed build, usage and validation guide.
 
-5_Atlas_Sharing/
-└─ Scripts and configurations for atlas distribution resources (ShinyCell app, scVI-hub model, UCSC Cell Browser).
+environments/
+├─ marg/
+│  ├─ Docker/                        Reduced, tested Docker runtime dependencies.
+│  └─ Original/                      Original Margaret environment snapshots.
+└─ roci/
+   ├─ Docker/                        Reduced, tested Docker runtime dependencies.
+   └─ Original/                      Original Rocinante environment snapshots.
+
+figures/                             Figures displayed in this README.
+Atlas_DEMO.h5ad                      Small demo dataset used by the smoke tests.
 ```
+
+## 🐳 Docker
+
+The analyses were run on two workstations, referred to throughout this
+repository by their code names: **Rocinante** ran **Ubuntu 20.04.6 LTS**, while
+**Margaret** ran **Ubuntu 20.04.4 LTS**. Four public Docker images reproduce
+their Python and R runtime environments. They can be pulled anonymously from
+the GitHub Container Registry (GHCR) and target `linux/amd64`.
+
+> **Beta notice:** The Docker images are currently in beta and remain under
+> active testing. Bugs may still be encountered; reports are welcome through
+> [GitHub Issues](https://github.com/ML4BM-Lab/Functional-cart-atlas/issues).
+
+| Environment | Runtime | Public image |
+|-------------|---------|--------------|
+| Rocinante | Python 3.8.10 | `ghcr.io/ml4bm-lab/functional-cart-atlas-python-roci:0.1.0` |
+| Rocinante | R 4.5.1 | `ghcr.io/ml4bm-lab/functional-cart-atlas-r-roci:0.1.0` |
+| Margaret | Python 3.8.10 | `ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.1.0` |
+| Margaret | R 4.1.3 | `ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg:0.1.0` |
+
+As a minimal example, the Margaret Python image can be downloaded and opened
+with the local repository mounted as follows:
+
+```bash
+ATLAS=/absolute/path/to/Functional-cart-atlas
+
+docker pull ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.1.0
+
+docker run --rm -it \
+  --mount type=bind,source="$ATLAS",target="$ATLAS" \
+  --workdir "$ATLAS" \
+  ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.1.0 \
+  bash
+```
+
+Replace `/absolute/path/to/Functional-cart-atlas` with the absolute path to the
+local repository. The directory is mounted read-write by default; append
+`,readonly` to the mount specification when write access is not required. See
+the [detailed Docker guide](https://github.com/ML4BM-Lab/Functional-cart-atlas/blob/main/docker/README_DOCKER.md)
+for all four images, build instructions, local smoke-test commands and rootless
+Docker usage.
+
+### Docker smoke tests
+
+[![Docker smoke tests](https://github.com/ML4BM-Lab/Functional-cart-atlas/actions/workflows/docker-smoke.yml/badge.svg)](https://github.com/ML4BM-Lab/Functional-cart-atlas/actions/workflows/docker-smoke.yml)
+
+Each image has a dedicated test under `docker/smoke-tests/`. The same tests run
+locally and in GitHub Actions against `Atlas_DEMO.h5ad`.
+
+These smoke tests check essential runtime, package, bridge and demo-file
+operations. They are intentionally lightweight and do not replace end-to-end
+reproduction of every scientific analysis in `Article/`.
 
 ## 👀 Overview
 
@@ -55,7 +122,7 @@ The code provided in this repository enables full reproduction of the **CAR-T Ce
 | 💻 **Interactive ShinyCell app** | [https://wholebioinfo.shinyapps.io/shinyatlas/](https://wholebioinfo.shinyapps.io/shinyatlas/) |
 | 🔎 **UCSC Cell Browser** | [https://car-t-atlas.cells.ucsc.edu](https://car-t-atlas.cells.ucsc.edu) |
 
-\* A template script to easily download the pretrained scVI model is available in `5_Atlas_Sharing/scVI-hub/scVI-hub_Download.py`.
+\* A template script to easily download the pretrained scVI model is available in `Article/5_Atlas_Sharing/scVI-hub/scVI-hub_Download.py`.
 
 ## 🧪 Demo dataset
 To facilitate testing and demonstration of the code provided in this repository, we include a small demo dataset (`Atlas_DEMO.h5ad`) containing 1,000 randomly selected cells from the final version of the atlas.
@@ -74,6 +141,11 @@ bioRxiv 2025.10.11.681788; doi: https://doi.org/10.1101/2025.10.11.681788
 
 All analyses were conducted using **Python (v3.8.10)** and **R (v4.5.1 / v4.1.3)** under **Ubuntu (20.04.6 LTS / 20.04.4 LTS)**.  
 Package versions are listed below as referenced in the *Online Methods* section of the manuscript:
+
+Exact environment records are available under `environments/`:
+`environments/*/Original/` preserves the original workstation snapshots, while
+`environments/*/Docker/` contains the reduced, tested runtime dependencies used
+to build the Docker images.
 
 ### R packages
 - **Seurat** v4.3.0.1
