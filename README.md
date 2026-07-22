@@ -55,6 +55,11 @@ repository by their code names: **Rocinante** ran **Ubuntu 20.04.6 LTS**, while
 their Python and R runtime environments. They can be pulled anonymously from
 the GitHub Container Registry (GHCR) and target `linux/amd64`.
 
+Each analysis script under `Article/` identifies its original workstation with
+a `# Machine: Rocinante` or `# Machine: Margaret` header. Combine this label
+with the `.py` or `.R` file extension to select the corresponding image in the
+table below.
+
 > **Beta notice:** The Docker images are currently in beta and remain under
 > active testing. Bugs may still be encountered; reports are welcome through
 > [GitHub Issues](https://github.com/ML4BM-Lab/Functional-cart-atlas/issues).
