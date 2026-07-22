@@ -94,6 +94,37 @@ docker --context rootless run --rm \
   functional-cart-atlas-r-marg:0.1.0 R --version
 ```
 
+## Local smoke tests
+
+The four smoke tests use `Atlas_DEMO.h5ad` read-only and write temporary output
+only inside the disposable containers. Run them from the repository root:
+
+```bash
+docker --context rootless run --rm \
+  --mount type=bind,source="$PWD",target=/repo,readonly \
+  functional-cart-atlas-python-roci:0.1.0 \
+  python3 /repo/docker/smoke-tests/roci-python.py /repo/Atlas_DEMO.h5ad
+
+docker --context rootless run --rm \
+  --mount type=bind,source="$PWD",target=/repo,readonly \
+  functional-cart-atlas-r-roci:0.1.0 \
+  Rscript /repo/docker/smoke-tests/roci-r.R /repo/Atlas_DEMO.h5ad
+
+docker --context rootless run --rm \
+  --mount type=bind,source="$PWD",target=/repo,readonly \
+  functional-cart-atlas-python-marg:0.1.0 \
+  python3 /repo/docker/smoke-tests/marg-python.py /repo/Atlas_DEMO.h5ad
+
+docker --context rootless run --rm \
+  --mount type=bind,source="$PWD",target=/repo,readonly \
+  functional-cart-atlas-r-marg:0.1.0 \
+  Rscript /repo/docker/smoke-tests/marg-r.R /repo/Atlas_DEMO.h5ad
+```
+
+Each command exits with a non-zero status if a required runtime, package,
+R/Python bridge, synthetic operation or demo-file read fails. Omit
+`--context rootless` when intentionally using the default Docker daemon.
+
 ## Transfer to another machine
 
 For a one-off transfer, save and compress an image:

@@ -1,0 +1,113 @@
+name: Docker smoke tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-matrix:
+    name: Prepare immutable image matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.images.outputs.matrix }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Validate image lock and prepare matrix
+        id: images
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          matrix_json="$(jq -cer '
+            if .schema_version != 1 then
+              error("unsupported schema_version")
+            elif (.images | length) != 4 then
+              error("exactly four images are required")
+            elif ([.images[].id] | unique | length) != 4 then
+              error("image ids must be unique")
+            elif any(
+              .images[];
+              (.id | test("^(roci|marg)-(python|r)$") | not) or
+              (.image | test("^ghcr\\.io/ml4bm-lab/functional-cart-atlas-(python|r)-(roci|marg)@sha256:[0-9a-f]{64}$") | not)
+            ) then
+              error("invalid image id or immutable GHCR reference")
+            else
+              {include: [.images[] | {id: .id, image: .image}]}
+            end
+          ' docker/images.lock)"
+
+          printf 'matrix=%s\n' "$matrix_json" >> "$GITHUB_OUTPUT"
+
+  smoke:
+    name: Smoke ${{ matrix.id }}
+    needs: prepare-matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix: ${{ fromJSON(needs.prepare-matrix.outputs.matrix) }}
+    env:
+      IMAGE: ${{ matrix.image }}
+      TEST_ID: ${{ matrix.id }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Show available disk space
+        run: df -h /
+
+      - name: Pull immutable public image
+        run: docker pull "$IMAGE"
+
+      - name: Run smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$TEST_ID" in
+            roci-python)
+              docker run --rm \
+                --mount type=bind,source="$GITHUB_WORKSPACE",target=/repo,readonly \
+                "$IMAGE" \
+                python3 /repo/docker/smoke-tests/roci-python.py \
+                /repo/Atlas_DEMO.h5ad
+              ;;
+            roci-r)
+              docker run --rm \
+                --mount type=bind,source="$GITHUB_WORKSPACE",target=/repo,readonly \
+                "$IMAGE" \
+                Rscript --vanilla /repo/docker/smoke-tests/roci-r.R \
+                /repo/Atlas_DEMO.h5ad
+              ;;
+            marg-python)
+              docker run --rm \
+                --mount type=bind,source="$GITHUB_WORKSPACE",target=/repo,readonly \
+                "$IMAGE" \
+                python3 /repo/docker/smoke-tests/marg-python.py \
+                /repo/Atlas_DEMO.h5ad
+              ;;
+            marg-r)
+              docker run --rm \
+                --mount type=bind,source="$GITHUB_WORKSPACE",target=/repo,readonly \
+                "$IMAGE" \
+                Rscript --vanilla /repo/docker/smoke-tests/marg-r.R \
+                /repo/Atlas_DEMO.h5ad
+              ;;
+            *)
+              printf 'Unknown smoke-test id: %s\n' "$TEST_ID" >&2
+              exit 2
+              ;;
+          esac
+
+      - name: Show final disk space
+        if: always()
+        run: df -h /
