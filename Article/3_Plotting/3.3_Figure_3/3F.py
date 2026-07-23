@@ -43,9 +43,30 @@ def _require_path(path):
 
 def _input_path(directory, filename):
     path = directory / filename
-    if not path.exists():
-        raise FileNotFoundError(f"Required input path does not exist: {path}")
-    return path
+    if path.exists():
+        return path
+    atlas_filenames = {
+        "Python_scVI_adata_big_V4_state4.h5ad",
+        "Python_scVI_adata_big_V4_state4_Normalized.h5ad",
+        "Atlas_integ_scArches_FINAL_V5.h5ad",
+    }
+    atlas_directories = (
+        project_dir / "Input",
+        project_dir / "Resultados" / "Joined_datasets" / "Raw_Atlas",
+    )
+    if filename in atlas_filenames and directory in atlas_directories:
+        alternate_paths = [
+            candidate / filename for candidate in atlas_directories if candidate != directory
+        ]
+        for alternate_path in alternate_paths:
+            if alternate_path.exists():
+                return alternate_path
+        checked_paths = [path, *alternate_paths]
+        raise FileNotFoundError(
+            "Required atlas input file does not exist. Checked: "
+            + ", ".join(str(candidate) for candidate in checked_paths)
+        )
+    raise FileNotFoundError(f"Required input path does not exist: {path}")
 
 
 def _output_path(directory, filename):
@@ -65,7 +86,7 @@ random.seed(2504)
 
 # %% Load data
 path = project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas'
-file = f"{path}/Python_scVI_adata_big_V4_state4.h5ad"
+file = _input_path(path, "Python_scVI_adata_big_V4_state4.h5ad")
 adata = anndata.read_h5ad(file)
 print(adata.shape[0])
 

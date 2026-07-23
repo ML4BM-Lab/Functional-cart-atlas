@@ -88,10 +88,40 @@ if (!nzchar(python_path) || !file.exists(python_path)) {
 
 .input_path <- function(directory, ...) {
     path <- file.path(directory, ...)
-    if (!file.exists(path) && !dir.exists(path)) {
-        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    if (file.exists(path) || dir.exists(path)) {
+        return(path)
     }
-    path
+
+    atlas_filenames <- c(
+        "Python_scVI_adata_big_V4_state4.h5ad",
+        "Python_scVI_adata_big_V4_state4_Normalized.h5ad",
+        "Atlas_integ_scArches_FINAL_V5.h5ad"
+    )
+    atlas_directories <- c(
+        file.path(project_dir, "Input"),
+        file.path(project_dir, "Resultados", "Joined_datasets", "Raw_Atlas")
+    )
+    if (basename(path) %in% atlas_filenames && directory %in% atlas_directories) {
+        alternate_paths <- file.path(
+            atlas_directories[atlas_directories != directory],
+            basename(path)
+        )
+        for (alternate_path in alternate_paths) {
+            if (file.exists(alternate_path)) {
+                return(alternate_path)
+            }
+        }
+        checked_paths <- c(path, alternate_paths)
+        stop(
+            paste(
+                "Required atlas input file does not exist. Checked:",
+                paste(checked_paths, collapse = ", ")
+            ),
+            call. = FALSE
+        )
+    }
+
+    stop(paste("Required input path does not exist:", path), call. = FALSE)
 }
 .output_path <- function(directory, ...) {
     path <- file.path(directory, ...)

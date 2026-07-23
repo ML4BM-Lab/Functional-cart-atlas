@@ -43,9 +43,30 @@ def _require_path(path):
 
 def _input_path(directory, filename):
     path = directory / filename
-    if not path.exists():
-        raise FileNotFoundError(f"Required input path does not exist: {path}")
-    return path
+    if path.exists():
+        return path
+    atlas_filenames = {
+        "Python_scVI_adata_big_V4_state4.h5ad",
+        "Python_scVI_adata_big_V4_state4_Normalized.h5ad",
+        "Atlas_integ_scArches_FINAL_V5.h5ad",
+    }
+    atlas_directories = (
+        project_dir / "Input",
+        project_dir / "Resultados" / "Joined_datasets" / "Raw_Atlas",
+    )
+    if filename in atlas_filenames and directory in atlas_directories:
+        alternate_paths = [
+            candidate / filename for candidate in atlas_directories if candidate != directory
+        ]
+        for alternate_path in alternate_paths:
+            if alternate_path.exists():
+                return alternate_path
+        checked_paths = [path, *alternate_paths]
+        raise FileNotFoundError(
+            "Required atlas input file does not exist. Checked: "
+            + ", ".join(str(candidate) for candidate in checked_paths)
+        )
+    raise FileNotFoundError(f"Required input path does not exist: {path}")
 
 
 def _output_path(directory, filename):
@@ -87,8 +108,6 @@ adata.raw = adata  # keep full dimension safe
 
 # %% Obtain the cellular annotation
 data_dir = project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas'
-if not data_dir.is_dir():
-    raise FileNotFoundError(f"Required input directory does not exist: {data_dir}")
 adata_orig = sc.read_h5ad(_input_path(data_dir, "Python_scVI_adata_big_V4_state4.h5ad"))
 
 adata_orig.obs.index = adata_orig.obs.index.str.replace(r"_\d+$", "", regex=True)
