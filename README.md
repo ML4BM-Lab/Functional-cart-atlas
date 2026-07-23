@@ -20,12 +20,12 @@ The code provided in this repository enables full reproduction of the **CAR-T Ce
 └─ docker-smoke.yml                  GitHub Actions Docker smoke-test workflow.
 
 Article/
-├─ Create_Article_Folder_Tree.py     Creates the analysis directory structure.
 ├─ 1_Data_Preprocessing/             Individual dataset processing and quality control.
 ├─ 2_Integration_and_Annotation/     scVI integration and manual cell type annotation.
 ├─ 3_Plotting/                       Manuscript figures and tables.
 ├─ 4_New_Data_Integration/           New-dataset integration and scArches-scANVI transfer.
-└─ 5_Atlas_Sharing/                  ShinyCell, scVI-hub and UCSC Cell Browser resources.
+├─ 5_Atlas_Sharing/                  ShinyCell, scVI-hub and UCSC Cell Browser resources.
+└─ Create_Article_Folder_Tree.py     Creates the analysis directory structure.
 
 bioRxiv-deprecated/                  Archived code associated with the earlier preprint version.
 
