@@ -20,6 +20,7 @@ The code provided in this repository enables full reproduction of the **CAR-T Ce
 └─ docker-smoke.yml                  GitHub Actions Docker smoke-test workflow.
 
 Article/
+├─ Create_Article_Folder_Tree.py     Creates the analysis directory structure.
 ├─ 1_Data_Preprocessing/             Individual dataset processing and quality control.
 ├─ 2_Integration_and_Annotation/     scVI integration and manual cell type annotation.
 ├─ 3_Plotting/                       Manuscript figures and tables.
@@ -46,6 +47,28 @@ environments/
 figures/                             Figures displayed in this README.
 Atlas_DEMO.h5ad                      Small demo dataset used by the smoke tests.
 ```
+
+## 📁 Prepare the analysis directory tree
+
+The analysis scripts use a shared repository-relative directory structure. To
+create all currently required directories before starting at any stage of the
+workflow, run:
+
+```bash
+python3 Article/Create_Article_Folder_Tree.py
+```
+
+To create the directory tree beneath a different project root:
+
+```bash
+python3 Article/Create_Article_Folder_Tree.py \
+  --project-dir /path/to/cart-atlas-project
+```
+
+The utility creates only missing directories and can be run repeatedly.
+Existing files, directories, symbolic links, and their contents are never
+deleted, moved, renamed, or overwritten. It creates the required directory
+structure but does not create or download any input data files.
 
 ## 🐳 Docker
 
