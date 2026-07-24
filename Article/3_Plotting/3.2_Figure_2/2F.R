@@ -170,8 +170,8 @@ print((sce %>% dim())[2])
 filtered_sce <- sce[, colData(sce)$Antigen == "Blood"]
 print((filtered_sce %>% dim())[2])
 
-# filtered_sce <- filtered_sce[, colData(filtered_sce)$manual_celltype_annotation_high == "CD8 cytotoxic"]
-# print((filtered_sce %>% dim())[2])
+filtered_sce <- filtered_sce[, colData(filtered_sce)$manual_celltype_annotation_high == "CD8 cytotoxic"]
+print((filtered_sce %>% dim())[2])
 
 filtered_sce <- filtered_sce[, ((colData(filtered_sce)$Time_Point_Ranges == "Infusion_Product") & (colData(filtered_sce)$Stimulated == "NO"))]
 print((filtered_sce %>% dim())[2])
