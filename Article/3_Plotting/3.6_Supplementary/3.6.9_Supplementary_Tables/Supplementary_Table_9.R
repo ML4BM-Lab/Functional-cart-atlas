@@ -1,7 +1,7 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Supplementary_Table_13.R
+# Program: Supplementary_Table_9.R
 # Author: Sergio Cámara Peña
 # Date: 04/12/2024
 # Version: FINAL
@@ -124,33 +124,25 @@ source(.input_path(.current_dir, "add_NTotalGenes.R"))
 set.seed(2504)
 
 ##### Read files #####
-.current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_IP_All")
-Final_result_IP <- read.csv(.input_path(.current_dir, "Final_result_Fig_2J_IP.csv")) # This object is generated in Dreamlet_V5_BCMA_vs_CD19_IP_All.R script
-Final_result_IP
+.current_dir <- file.path(project_dir, "Resultados", "CD8_Short_Anytime_CR")
+Final_result <- read.csv(.input_path(.current_dir, "Final_result_Fig_2C.csv")) # This object is generated in Dreamlet_CD8_short_anytime_CR.R script
+Final_result
 
-.current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_MID")
-Final_result_MID <- read.csv(.input_path(.current_dir, "Final_result_Fig_2J_MID.csv")) # This object is generated in Dreamlet_V5_BCMA_vs_CD19_MID.R script
-Final_result_MID
+library(dplyr)
 
-# Add ID column
-Final_result_IP  <- Final_result_IP  %>% mutate(assay = "IP")
-Final_result_MID <- Final_result_MID %>% mutate(assay = "MID")
+df <- Final_result
 
-# Merge all in one df
-Final_result_all <- bind_rows(Final_result_IP, Final_result_MID)
-
-# Compare between IP and MID
-comparison <- Final_result_all %>%
+results <- df %>%
   group_by(Geneset) %>%
   summarise(
-    delta_IP = delta[assay == "IP"],
-    se_IP    = se[assay == "IP"],
-    delta_MID = delta[assay == "MID"],
-    se_MID    = se[assay == "MID"],
+    delta1 = dplyr::first(delta),
+    se1 = dplyr::first(se),
+    delta2 = dplyr::last(delta),
+    se2 = dplyr::last(se),
     .groups = "drop"
   ) %>%
   mutate(
-    Z = (delta_IP - delta_MID) / sqrt(se_IP^2 + se_MID^2),
+    Z = (delta1 - delta2) / sqrt(se1^2 + se2^2),
     pval = 1 - pnorm(abs(Z)), # One-tail test
     sig = case_when(
       pval <= 0.001  ~ "***",
@@ -160,9 +152,8 @@ comparison <- Final_result_all %>%
     )
   )
 
-comparison
-.current_dir <- file.path(project_dir, "Resultados_V5", "Supplementary_Table_13")
-write.csv(comparison, .output_path(.current_dir, "Supplementary_Table_13.csv"))
+results
+write.csv(results, .output_path(.current_dir, "Supplementary_Table_9.csv"))
 
 ################################
 ######## END OF SCRIPT #########

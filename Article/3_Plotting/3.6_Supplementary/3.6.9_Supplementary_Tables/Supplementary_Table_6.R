@@ -88,40 +88,10 @@ if (!nzchar(python_path) || !file.exists(python_path)) {
 
 .input_path <- function(directory, ...) {
     path <- file.path(directory, ...)
-    if (file.exists(path) || dir.exists(path)) {
-        return(path)
+    if (!file.exists(path) && !dir.exists(path)) {
+        stop(paste("Required input path does not exist:", path), call. = FALSE)
     }
-
-    atlas_filenames <- c(
-        "Python_scVI_adata_big_V4_state4.h5ad",
-        "Python_scVI_adata_big_V4_state4_Normalized.h5ad",
-        "Atlas_integ_scArches_FINAL_V5.h5ad"
-    )
-    atlas_directories <- c(
-        file.path(project_dir, "Input"),
-        file.path(project_dir, "Resultados", "Joined_datasets", "Raw_Atlas")
-    )
-    if (basename(path) %in% atlas_filenames && directory %in% atlas_directories) {
-        alternate_paths <- file.path(
-            atlas_directories[atlas_directories != directory],
-            basename(path)
-        )
-        for (alternate_path in alternate_paths) {
-            if (file.exists(alternate_path)) {
-                return(alternate_path)
-            }
-        }
-        checked_paths <- c(path, alternate_paths)
-        stop(
-            paste(
-                "Required atlas input file does not exist. Checked:",
-                paste(checked_paths, collapse = ", ")
-            ),
-            call. = FALSE
-        )
-    }
-
-    stop(paste("Required input path does not exist:", path), call. = FALSE)
+    path
 }
 .output_path <- function(directory, ...) {
     path <- file.path(directory, ...)
@@ -157,84 +127,67 @@ source(.input_path(.current_dir, "add_NTotalGenes.R"))
 ## Set random seed
 set.seed(2504)
 
-##### Supplementary Table 6 #####
-## Read files
-path <- file.path(project_dir, "Input")
-file <- .input_path(path, "Python_scVI_adata_big_V4_state4.h5ad")
-adata <- anndata$read_h5ad(file)
+# Go to AUCell_CD8_IL10_CR.R and AUCell_CD8_IL10_NR.R if you want to change something of the code - In there you will find all additional graphics and tests.
 
-sce <- AnnData2SCE(adata, "counts", uns = FALSE, obsm = FALSE, obsp = FALSE)
-sce
-assay(sce, "counts") %>% max()
+.current_dir <- file.path(project_dir, "Resultados", "AUCell_CD8_IL10_NR")
+auc_long_NR <- readRDS(.input_path(.current_dir, "auc_long_NR.RDS"))
 
-print((sce %>% dim())[2])
+.current_dir <- file.path(project_dir, "Resultados", "AUCell_CD8_IL10_CR")
+auc_long_CR <- readRDS(.input_path(.current_dir, "auc_long_CR.RDS"))
 
-## Filter object
-filtered_sce <- sce[, colData(sce)$Antigen == "Blood"]
-print((filtered_sce %>% dim())[2])
+# Add condition labels
+auc_long_NR$Group <- "NR"
+auc_long_CR$Group <- "CR"
 
-filtered_sce <- filtered_sce[, colData(filtered_sce)$Time_Point_Ranges == "Infusion_Product"]
-print((filtered_sce %>% dim())[2])
+# Combine
+auc_combined <- rbind(auc_long_NR, auc_long_CR)
 
-filtered_sce <- filtered_sce[, !((colData(filtered_sce)$Time_Point_Ranges == "Infusion_Product") & (colData(filtered_sce)$Stimulated == "YES"))]
-print((filtered_sce %>% dim())[2])
+## Wilcoxon additional test
+wilcoxon_results <- auc_combined %>%
+  group_by(Cell_Type) %>%
+  summarise(
+    p_value = wilcox.test(AUC[Group == "NR"], AUC[Group == "CR"])$p.value,
+    NR_median = median(AUC[Group == "NR"]),
+    CR_median = median(AUC[Group == "CR"]),
+    N_NR = sum(Group == "NR"),
+    N_CR = sum(Group == "CR")
+  ) %>%
+  mutate(p_adj = p.adjust(p_value, method = "BH"))
 
-filtered_sce <- filtered_sce[, colData(filtered_sce)$STATUS == "DISEASE"]
-print((filtered_sce %>% dim())[2])
+wilcoxon_results <- wilcoxon_results %>%
+  mutate(delta_median = NR_median - CR_median)
 
-colData(filtered_sce)$Age_Range <- factor(colData(filtered_sce)$Age_Range, levels = c("<20", "20-40", "40-60", ">60"), ordered=TRUE)
+print(wilcoxon_results)
 
-## Remove NAs to avoid any further problems
-table(filtered_sce$Anytime_CR, useNA = "ifany")
-filtered_sce <- filtered_sce[, !is.na(filtered_sce$Anytime_CR)]
-table(filtered_sce$Anytime_CR, useNA = "ifany")
-
-## Do these cells express more IL-10?
-# Get unique cell types
-perform_fisher_test <- function(cell_type) {
-  # Subset the data for the given cell type
-  cell_indices <- filtered_sce$manual_celltype_annotation_high == cell_type
-
-  # Create contingency table
-  contingency_table <- table(
-    IL10_expr = assay(filtered_sce, "counts")["IL10", cell_indices] > 0,
-    Response = filtered_sce$Max_Response[cell_indices]
-  )
-  
-  # Ensure both "CR" and "NR" exist in the table
-  expected_levels <- c("CR", "NR")
-  contingency_table <- contingency_table[, expected_levels, drop = FALSE]
-  
-  # Ensure the table is 2x2 (force missing rows/columns to be zero)
-  if (!all(c(TRUE, FALSE) %in% rownames(contingency_table))) {
-    full_table <- matrix(0, nrow = 2, ncol = 2,
-                         dimnames = list(c(FALSE, TRUE), expected_levels))
-    full_table[rownames(contingency_table), ] <- contingency_table
-    contingency_table <- full_table
+# Get asterisk significance
+get_significance <- function(p) {
+  if (p < 0.001) {
+    return("***")
+  } else if (p < 0.01) {
+    return("**")
+  } else if (p < 0.05) {
+    return("*")
+  } else {
+    return("ns")
   }
-  
-  # Perform Fisher's test
-  test_result <- fisher.test(contingency_table)
-  
-  return(list(
-    cell_type = cell_type,
-    contingency_table = contingency_table,
-    p_value = test_result$p.value,
-    odds_ratio = test_result$estimate
-  ))
 }
 
-cell_types <- filtered_sce$manual_celltype_annotation_high %>% unique()
+# Add significance column
+wilcoxon_results <- wilcoxon_results %>%
+  mutate(Significance = sapply(p_adj, get_significance))
 
-# Apply function to all cell types
-fisher_results <- lapply(cell_types, perform_fisher_test)
+# Print table
+wilcoxon_results %>%
+  dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance) %>%
+  print(n = Inf, width = Inf)
 
-# Remove NULL results
-fisher_results <- fisher_results[!sapply(fisher_results, is.null)]
+if (FALSE) {
+  write.csv(
+    wilcoxon_results %>%
+      dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance),
+    file = .output_path(.current_dir, "Supplementary_Table_6.csv"),
+    row.names = FALSE
+  )
+}
 
-# Print results
-fisher_results
-
-################################
-######## END OF SCRIPT #########
-################################
+##################### END OF SCRIPT #####################

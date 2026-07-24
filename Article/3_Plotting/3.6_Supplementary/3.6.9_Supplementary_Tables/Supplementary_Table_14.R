@@ -1,9 +1,9 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Supplementary_Table_5.R
+# Program: Supplementary_Table_14.R
 # Author: Sergio Cámara Peña
-# Date: 04/06/2025
+# Date: 04/12/2024
 # Version: FINAL
 # Machine: Rocinante
 
@@ -113,9 +113,6 @@ library(EnrichmentBrowser)
 library(GSEABase)
 library(Cairo)
 library(SMFilter)
-library(scater)
-library(coin)
-library(see)
 
 library(reticulate)
 use_python(python_path)
@@ -124,70 +121,49 @@ anndata <- reticulate::import("anndata")
 .current_dir <- file.path(project_dir, "Codigo", "Rocinante_DEA", "Funciones")
 source(.input_path(.current_dir, "add_NTotalGenes.R"))
 
-## Set random seed
 set.seed(2504)
 
-# Go to AUCell_CD8_IL10_CR.R and AUCell_CD8_IL10_NR.R if you want to change something of the code - In there you will find all additional graphics and tests.
+##### Read files #####
+.current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_IP_All")
+Final_result_IP <- read.csv(.input_path(.current_dir, "Final_result_Fig_2J_IP.csv")) # This object is generated in Dreamlet_V5_BCMA_vs_CD19_IP_All.R script
+Final_result_IP
 
-.current_dir <- file.path(project_dir, "Resultados", "AUCell_CD8_IL10_NR")
-auc_long_NR <- readRDS(.input_path(.current_dir, "auc_long_NR.RDS"))
+.current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_MID")
+Final_result_MID <- read.csv(.input_path(.current_dir, "Final_result_Fig_2J_MID.csv")) # This object is generated in Dreamlet_V5_BCMA_vs_CD19_MID.R script
+Final_result_MID
 
-.current_dir <- file.path(project_dir, "Resultados", "AUCell_CD8_IL10_CR")
-auc_long_CR <- readRDS(.input_path(.current_dir, "auc_long_CR.RDS"))
+# Add ID column
+Final_result_IP  <- Final_result_IP  %>% mutate(assay = "IP")
+Final_result_MID <- Final_result_MID %>% mutate(assay = "MID")
 
-# Add condition labels
-auc_long_NR$Group <- "NR"
-auc_long_CR$Group <- "CR"
+# Merge all in one df
+Final_result_all <- bind_rows(Final_result_IP, Final_result_MID)
 
-# Combine
-auc_combined <- rbind(auc_long_NR, auc_long_CR)
-
-## Wilcoxon additional test
-wilcoxon_results <- auc_combined %>%
-  group_by(Cell_Type) %>%
+# Compare between IP and MID
+comparison <- Final_result_all %>%
+  group_by(Geneset) %>%
   summarise(
-    p_value = wilcox.test(AUC[Group == "NR"], AUC[Group == "CR"])$p.value,
-    NR_median = median(AUC[Group == "NR"]),
-    CR_median = median(AUC[Group == "CR"]),
-    N_NR = sum(Group == "NR"),
-    N_CR = sum(Group == "CR")
+    delta_IP = delta[assay == "IP"],
+    se_IP    = se[assay == "IP"],
+    delta_MID = delta[assay == "MID"],
+    se_MID    = se[assay == "MID"],
+    .groups = "drop"
   ) %>%
-  mutate(p_adj = p.adjust(p_value, method = "BH"))
-
-wilcoxon_results <- wilcoxon_results %>%
-  mutate(delta_median = NR_median - CR_median)
-
-print(wilcoxon_results)
-
-# Get asterisk significance
-get_significance <- function(p) {
-  if (p < 0.001) {
-    return("***")
-  } else if (p < 0.01) {
-    return("**")
-  } else if (p < 0.05) {
-    return("*")
-  } else {
-    return("ns")
-  }
-}
-
-# Add significance column
-wilcoxon_results <- wilcoxon_results %>%
-  mutate(Significance = sapply(p_adj, get_significance))
-
-# Print table
-wilcoxon_results %>%
-  dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance) %>%
-  print(n = Inf, width = Inf)
-
-if (FALSE) {
-  write.csv(
-    wilcoxon_results %>%
-      dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance),
-    file = .output_path(.current_dir, "Supplementary_Table_5.csv"),
-    row.names = FALSE
+  mutate(
+    Z = (delta_IP - delta_MID) / sqrt(se_IP^2 + se_MID^2),
+    pval = 1 - pnorm(abs(Z)), # One-tail test
+    sig = case_when(
+      pval <= 0.001  ~ "***",
+      pval <= 0.01   ~ "**",
+      pval <= 0.05   ~ "*",
+      TRUE           ~ "ns"
+    )
   )
-}
 
-##################### END OF SCRIPT #####################
+comparison
+.current_dir <- file.path(project_dir, "Resultados_V5", "Supplementary_Table_14")
+write.csv(comparison, .output_path(.current_dir, "Supplementary_Table_14.csv"))
+
+################################
+######## END OF SCRIPT #########
+################################

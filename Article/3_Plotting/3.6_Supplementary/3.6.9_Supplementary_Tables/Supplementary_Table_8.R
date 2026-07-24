@@ -128,33 +128,4 @@ set.seed(2504)
 Final_result <- read.csv(.input_path(.current_dir, "Final_result_Fig_2C.csv")) # This object is generated in Dreamlet_CD8_short_anytime_CR.R script
 Final_result
 
-library(dplyr)
-
-df <- Final_result
-
-results <- df %>%
-  group_by(Geneset) %>%
-  summarise(
-    delta1 = dplyr::first(delta),
-    se1 = dplyr::first(se),
-    delta2 = dplyr::last(delta),
-    se2 = dplyr::last(se),
-    .groups = "drop"
-  ) %>%
-  mutate(
-    Z = (delta1 - delta2) / sqrt(se1^2 + se2^2),
-    pval = 1 - pnorm(abs(Z)), # One-tail test
-    sig = case_when(
-      pval <= 0.001  ~ "***",
-      pval <= 0.01   ~ "**",
-      pval <= 0.05   ~ "*",
-      TRUE           ~ "ns"
-    )
-  )
-
-results
-write.csv(results, .output_path(.current_dir, "Supplementary_Table_8.csv"))
-
-################################
-######## END OF SCRIPT #########
-################################
+##### END OF SCRIPT #####
