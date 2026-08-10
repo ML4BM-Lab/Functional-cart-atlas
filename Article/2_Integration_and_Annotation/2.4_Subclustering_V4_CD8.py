@@ -221,11 +221,9 @@ output_directory = project_dir / 'Resultados' / 'Joined_datasets' / 'Integration
 for cluster in clusters:
     cluster_name = cluster["name"]
     cluster_genes = cluster["genes"]
-
     for database_name, gene_set in gene_set_databases.items():
         _current_dir = Path(output_directory)
         _current_dir.mkdir(parents=True, exist_ok=True)
-
         # Perform gene set analysis
         enr_res = gseapy.enrichr(
             gene_list=cluster_genes,
@@ -233,7 +231,6 @@ for cluster in clusters:
             gene_sets=gene_set,
             cutoff=0.5
         )
-
         # Generate a bar plot for the results
         plot_title = f"{cluster_name}_{database_name}_2023"
         plot_filename = f"enr_res_{cluster_name}_{database_name}.png"

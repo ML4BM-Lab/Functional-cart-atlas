@@ -141,67 +141,50 @@ embedding_obsm_keys = []
 for method, info in methods.items():
 
     print(f"\n[bold green]Processing {method}[/bold green]")
-
     adata_method = sc.read_h5ad(info["path"])
     adata_method.obs_names_make_unique()
-
     source_embedding = info["source_embedding"]
     target_embedding = info["target_embedding"]
-
     print(f"Available embeddings: {list(adata_method.obsm.keys())}")
-
     if source_embedding not in adata_method.obsm.keys():
         raise ValueError(
             f"{source_embedding} not found for {method}. "
             f"Available embeddings are: {list(adata_method.obsm.keys())}"
         )
-
     # Check same cells
     same_cells = set(adata_method.obs_names) == set(adata_scIB_all.obs_names)
     same_number_cells = adata_method.n_obs == adata_scIB_all.n_obs
-
     print(f"Same number of cells: {same_number_cells}")
     print(f"Same cells: {same_cells}")
-
     if not same_cells:
         missing_in_method = set(adata_scIB_all.obs_names) - set(adata_method.obs_names)
         extra_in_method = set(adata_method.obs_names) - set(adata_scIB_all.obs_names)
-
         raise ValueError(
             f"{method} does not contain the same cells as the reference object.\n"
             f"Missing in {method}: {len(missing_in_method)} cells\n"
             f"Extra in {method}: {len(extra_in_method)} cells"
         )
-
     # Reorder cells to match reference order
     adata_method = adata_method[adata_scIB_all.obs_names].copy()
-
     # Optional checks for metadata consistency
     same_batch = (
         adata_method.obs[batch_key].astype(str).values
         == adata_scIB_all.obs[batch_key].astype(str).values
     ).all()
-
     same_label = (
         adata_method.obs[label_key].astype(str).values
         == adata_scIB_all.obs[label_key].astype(str).values
     ).all()
-
     print(f"Same {batch_key}: {same_batch}")
     print(f"Same {label_key}: {same_label}")
-
     if not same_batch:
         raise ValueError(f"{batch_key} differs between reference and {method}")
-
     if not same_label:
         raise ValueError(f"{label_key} differs between reference and {method}")
-
     # Copy method-specific embedding
     adata_scIB_all.obsm[target_embedding] = adata_method.obsm[source_embedding].copy()
-
     print(f"Copied {source_embedding} as {target_embedding}")
     print(f"Embedding shape: {adata_scIB_all.obsm[target_embedding].shape}")
-
     embedding_obsm_keys.append(target_embedding)
 
 ###############################################################################

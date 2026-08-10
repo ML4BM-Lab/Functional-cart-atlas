@@ -195,13 +195,10 @@ for name, genes in gene_signatures.items():
     genes_upper = [g.upper() for g in genes]
     var_names_upper = [g.upper() for g in adata_filtered.var_names]
     genes_present = [genes[i] for i, g in enumerate(genes_upper) if g in var_names_upper]
-
     if len(genes_present) == 0:
         print(f"No genes of signature {name} found in dataset — skipping.")
         continue
-
     print(f"Scoring signature {name} with {len(genes_present)} genes (out of {len(genes)} total)")
-
     sc.tl.score_genes(
         adata_filtered,
         gene_list=genes_present,

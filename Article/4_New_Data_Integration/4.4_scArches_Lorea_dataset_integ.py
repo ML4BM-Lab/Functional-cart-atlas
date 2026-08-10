@@ -128,7 +128,6 @@ if Train:
     use_batch_norm="none",
     gene_likelihood="nb"
 )
-
     sca.models.SCVI.view_anndata_setup(vae)
 
 # %% Train the model
@@ -174,7 +173,6 @@ if Save_h5ad_1:
     reference_latent = sc.AnnData(scanvae.get_latent_representation())
     reference_latent.obs["cell_type"] = adata_Reference.obs["manual_celltype_annotation_high"].tolist()
     reference_latent.obs["batch"] = adata_Reference.obs["Product_norm"].tolist()
-
     sc.pp.neighbors(reference_latent, n_neighbors=8)
     sc.tl.leiden(reference_latent)
     sc.tl.umap(reference_latent)
@@ -228,13 +226,11 @@ if Train_2:
 if Train_2:
     adata_Query_copy = adata_Query.copy()
     genes_to_keep = adata_Reference.var_names.tolist()
-
     # Ensure genes_to_keep contains the 2000 differential genes, to avoid bugs, if not, error.
     if len(genes_to_keep) != 2000:
         raise ValueError(f"Expected 2000 genes, but found {len(genes_to_keep)}.")
     else:
         print("2000 genes, OK!")
-
     adata_Query = adata_Query[:, genes_to_keep]
 
 # %% Perform surgery on reference model and train on query dataset without cell type labels
@@ -244,7 +240,6 @@ if Train_2:
         reference_model="Atlas_integ_scArches_Reference_V5_scanvae",
         freeze_dropout = True,
     )
-
     model._unlabeled_indices = np.arange(adata_Query.n_obs)
     model._labeled_indices = []
     print("Labelled Indices: ", len(model._labeled_indices))
@@ -474,26 +469,20 @@ _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integratio
 
 if Save_h5ad_4:
     adata_big_2.raw = None
-
-
     ##### Changes in metadata to up-to-date to latest version #####
     ## Load CSV with changes
     _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas')
     time_point_changes = pd.read_csv(_input_path(_current_dir, "Time_Point_Changes_V5.csv"), sep=";", index_col="Norm_Sample_Name")
-
     # Join directly to update Time_Point and Time_Point_Ranges
     adata_big_2.obs = adata_big_2.obs.drop(columns=["Time_Point", "Time_Point_Ranges"], errors="ignore")
     adata_big_2.obs = adata_big_2.obs.join(
         time_point_changes,
         on="Product_norm"   # match Product_norm in obs with Norm_Sample_Name index
     )
-
     # Quick check
     pd.set_option("display.max_rows", None)
     Check = adata_big_2.copy()
     print(Check.obs[["Product_norm", "Time_Point", "Time_Point_Ranges"]].drop_duplicates().to_string(index=False))
-
-
     adata_big_2.write(_output_path(_current_dir, "Atlas_integ_scArches_FINAL_V5.h5ad"))
     print("Correctly saved")
 else:

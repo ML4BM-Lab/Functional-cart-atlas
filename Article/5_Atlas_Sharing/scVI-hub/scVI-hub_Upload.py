@@ -65,34 +65,25 @@ if First_Time:
     adata = sc.read(
         _input_path(_current_dir, "Seurat_merged_With_Celltypist.h5ad")
     )
-
     adata.layers["counts"] = adata.X.copy()
-
     ## Normalize and log scale
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
     adata.raw = adata  # Freeze the state in ".raw"
-
     ## Remove samples with fewer than 45 CD3⁺ and CAR⁺ cells — since they cause issues in the next step.
     sample_column = 'Product_norm'
-
     # Count the number of cells per sample
     cell_counts = adata.obs[sample_column].value_counts(sort=False)
-
     # Filter samples with less than 45 cells
     filtered_samples = cell_counts[cell_counts >= 45].index
-
     # Subset the AnnData object to keep only samples with at least 45 cells
     adata_filtered = adata.copy()
     adata_filtered = adata_filtered[adata_filtered.obs[sample_column].isin(filtered_samples)]
-
     del adata
     adata = adata_filtered.copy()
     del adata_filtered
-
     # Identify and only keep the 2000 most variable genes
     sc.pp.filter_genes(adata, min_cells=10)
-
     sc.pp.highly_variable_genes(
         adata,
         flavor="seurat_v3",
@@ -102,11 +93,8 @@ if First_Time:
         span=0.6,
         subset=True,
     )
-
     adata.obs.rename(columns={"orig.ident": "orig_ident"}, inplace=True)
-
     adata.write(_output_path(_current_dir, "scVI_hub_adata.h5ad"))
-
 else:
     adata = sc.read_h5ad(_input_path(_current_dir, "scVI_hub_adata.h5ad"))
 

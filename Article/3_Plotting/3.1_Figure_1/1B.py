@@ -257,11 +257,9 @@ col_blocks = []
 for col in cols:
     items = []
     label_title = TextArea(f"{col}", textprops=dict(size=9, weight='bold'))
-
     unique_vals = pd.Series(Df_heatmap[col].unique())
     valid_vals = [v for v in unique_vals if pd.notna(v) and v in color_maps[col]]
     has_missing = unique_vals.isna().any() or any(v not in color_maps[col] for v in unique_vals if pd.notna(v))
-
     for val in valid_vals:
         clr = color_maps[col][val]
         da = DrawingArea(15, 10, 0, 0)
@@ -270,7 +268,6 @@ for col in cols:
         label = TextArea(f" {val}", textprops={'size': 8})
         packed = HPacker(children=[da, label], align="center", pad=0, sep=2)
         items.append(packed)
-
     if has_missing:
         da = DrawingArea(15, 10, 0, 0)
         rect = plt.Rectangle((0, 0), 15, 10, facecolor=COLOR_NA, edgecolor='black', lw=0.3)
@@ -278,7 +275,6 @@ for col in cols:
         label = TextArea(" NA", textprops={'size': 8})
         packed = HPacker(children=[da, label], align="center", pad=0, sep=2)
         items.append(packed)
-
     block = VPacker(children=[label_title] + items, align="left", pad=0, sep=2)
     col_blocks.append(block)
 
@@ -313,16 +309,13 @@ for col in columns_to_plot:
     value_counts = Df_heatmap[col].value_counts()
     print(value_counts)
     colors = [color_maps[col].get(cat, COLOR_NA) for cat in value_counts.index]  # grey color if NA
-
     plt.figure(figsize=(6,6))
     plt.pie(value_counts, autopct='%1.1f%%', startangle=140, colors=colors)
     plt.axis('equal')
     plt.tight_layout()
-
     # Save image
     filename = f"Figura1Bb_{col}_pie_chart.pdf"
     plt.savefig(_output_path(figures_dir, filename), dpi=300)
-
     plt.show()
 
 # %% End of script

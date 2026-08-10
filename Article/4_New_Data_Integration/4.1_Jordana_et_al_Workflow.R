@@ -237,3 +237,5 @@ p + plot_annotation(title = paste0(Jordana_Seurat@meta.data$orig.ident %>% uniqu
 dev.off()
 
 rm(p)
+
+##### END OF SCRIPT #####

@@ -223,3 +223,5 @@ if __name__ == "__main__":
         for conflict in directory_conflicts:
             print(f"  {conflict}", file=sys.stderr)
         raise SystemExit(1)
+
+# %% End of script

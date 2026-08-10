@@ -39,6 +39,7 @@ if not project_dir.is_dir():
         f"Project directory does not exist: {project_dir}. "
         "Set --project-dir or CART_ATLAS_PROJECT_DIR."
     )
+
 models_dir = Path(
     _path_args.models_dir
     or os.environ.get("CART_ATLAS_MODELS_DIR", project_dir / "Models" / "CellTypist")
@@ -72,6 +73,7 @@ models.models_path = str(models_dir)
 if Online:
     models_dir.mkdir(parents=True, exist_ok=True)
     models.download_models(force_update=True)
+
 model_to_use = models.Model.load(model=str(_input_path(models_dir, "Immune_All_Low.pkl")))
 
 
@@ -101,4 +103,4 @@ _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integratio
 # Save metadata table to a file
 adata.obs.to_csv(_output_path(_current_dir, "celltypist_metadata_table.csv"), sep=",", index=True, header=True)
 
-# %% End of program
+# %% End of script

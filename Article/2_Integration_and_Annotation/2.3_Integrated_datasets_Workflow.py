@@ -102,17 +102,13 @@ if Train:
 # %% Remove samples with fewer than 45 CD3⁺ and CAR⁺ cells — since they cause issues in the next step
 if Train:
     sample_column = 'Product_norm'
-
     # Count the number of cells per sample
     cell_counts = adata.obs[sample_column].value_counts(sort=False)
-
     # Filter samples with less than 45 cells
     filtered_samples = cell_counts[cell_counts >= 45].index
-
     # Subset the AnnData object to keep only samples with at least 45 cells
     adata_filtered = adata.copy()
     adata_filtered = adata_filtered[adata_filtered.obs[sample_column].isin(filtered_samples)]
-
     del adata
     adata = adata_filtered.copy()
     del adata_filtered
@@ -120,7 +116,6 @@ if Train:
 # %% Identify and only keep the 2000 most variable genes ----------- GIVES ERROR loess fit (I had modified span argument to 0.6, default is 0.3)
 if Train:
     sc.pp.filter_genes(adata, min_cells=10)
-
     sc.pp.highly_variable_genes(
         adata,
         flavor="seurat_v3",
@@ -211,9 +206,7 @@ for i in range(len(Features_to_explore)):
     feature_name = Features_to_explore[i]
     filename = f"_{feature_name}_scVI_V4.pdf"
     filename2 = f"_{feature_name}_scVI_V4.png"
-
     sc.pl.umap(adata, color=feature_name, frameon=False, save=filename)
-
     sc.pl.umap(adata, color=feature_name, frameon=False, save=filename2)
 
 # %% Clustering QC Plots --- 4 QC parameters, dataset contribution to cluster, cluster composition by dataset, cell cycle
@@ -525,9 +518,7 @@ for i in range(len(Features_to_explore)):
     feature_name = Features_to_explore[i]
     filename = f"_{feature_name}_scVI_V4_WO_ery.pdf"
     filename2 = f"_{feature_name}_scVI_V4_WO_ery.png"
-
     sc.pl.umap(adata, color=feature_name, frameon=False, save=filename)
-
     sc.pl.umap(adata, color=feature_name, frameon=False, save=filename2)
 
 # %% Load/Save state 2.5

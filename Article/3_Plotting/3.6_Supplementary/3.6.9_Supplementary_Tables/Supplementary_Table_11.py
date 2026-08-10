@@ -143,39 +143,31 @@ print("N patients ICANS 3-4:", len(high))
 # %% Mann–Whitney tests (Wilcoxon rank-sum)
 if len(low) > 0 and len(high) > 0:
     stat, p_wilcoxon = mannwhitneyu(low, high, alternative="two-sided")
-
     # Medians
     median_low = np.median(low)
     median_high = np.median(high)
-
     # Means
     mean_low = np.mean(low)
     mean_high = np.mean(high)
-
     # Value ranges
     range_low = (np.min(low), np.max(low))
     range_high = (np.min(high), np.max(high))
-
     # Fold-change (median and mean)
     fold_median = (median_high / median_low) if median_low > 0 else np.inf
     fold_mean = (mean_high / mean_low) if mean_low > 0 else np.inf
-
     print("\nWilcoxon rank-sum (IAC % per patient):")
     print("U-statistic:", stat)
     print("p-value:", p_wilcoxon)
-
     print("\nICANS 1-2:")
     print("  N =", len(low))
     print("  Median IAC%     =", median_low)
     print("  Mean IAC%       =", mean_low)
     print("  Range IAC%      =", range_low)
-
     print("\nICANS 3-4:")
     print("  N =", len(high))
     print("  Median IAC%     =", median_high)
     print("  Mean IAC%       =", mean_high)
     print("  Range IAC%      =", range_high)
-
     print("\nFold-change comparisons:")
     print("  Median fold-change (3-4 vs 1-2):", fold_median)
     print("  Mean fold-change (3-4 vs 1-2):", fold_mean)

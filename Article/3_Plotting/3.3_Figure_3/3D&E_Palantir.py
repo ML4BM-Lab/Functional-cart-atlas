@@ -111,19 +111,16 @@ def binned_means_zscore(adata, genes, pseudotime, n_bins=25):
     bins = pd.qcut(pseudotime, q=n_bins, duplicates="drop")
     codes = np.asarray(bins.codes)
     n_eff = codes.max() + 1
-
     M = np.zeros((len(genes), n_eff), dtype=float)
     for i, g in enumerate(genes):
         v = get_expr_vector(adata, g)
         for b in range(n_eff):
             idx = (codes == b)
             M[i, b] = np.mean(v[idx]) if np.any(idx) else np.nan
-
     # z-score per gen (row)
     mu = np.nanmean(M, axis=1, keepdims=True)
     sd = np.nanstd(M, axis=1, keepdims=True) + 1e-9
     Mz = (M - mu) / sd
-
     # mean pseudotime value per bin (to label the X-axis)
     bin_mids = np.array([np.mean(pseudotime[codes == b]) for b in range(n_eff)])
     return Mz, bin_mids
@@ -301,12 +298,10 @@ last_im = None
 for ax, pname in zip(axes, panel_order):
     genes = top_genes[pname]
     Mz, bin_mids = binned_means_zscore(ad, genes, pt, n_bins=N_BINS)
-
     last_im = ax.imshow(Mz, aspect="auto", interpolation="nearest", vmin=VMIN, vmax=VMAX)
     ax.set_title(pname)
     ax.set_yticks(np.arange(len(genes)))
     ax.set_yticklabels(genes, fontsize=8)
-
     n_eff = Mz.shape[1]
     ax.set_xlim(-0.5, n_eff - 0.5)
     ax.set_xticks([-0.5, n_eff - 0.5])

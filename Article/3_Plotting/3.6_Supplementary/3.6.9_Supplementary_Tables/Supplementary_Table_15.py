@@ -91,17 +91,14 @@ failed_files = []
 for csv_name in csv_files:
 
     csv_path = results_dir / csv_name
-
     print("\n")
     print("=" * 120)
     print(f"FILE: {csv_name}")
     print("=" * 120)
-
     if not csv_path.is_file():
         print(f"FILE NOT FOUND: {csv_path}")
         missing_files.append(csv_name)
         continue
-
     try:
         df = pd.read_csv(csv_path)
 

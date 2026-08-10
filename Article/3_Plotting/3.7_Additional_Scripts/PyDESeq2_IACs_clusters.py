@@ -167,7 +167,6 @@ for sample in filtered_adata.obs.Product_norm.unique():
     rep_adata.obs['IACs_differenciation'] = samp_filtered_adata.obs['IACs_differenciation'].iloc[0]
     
     pbs.append(rep_adata)
-
     print(sample, " DONE")
 
 pb = sc.concat(pbs)
