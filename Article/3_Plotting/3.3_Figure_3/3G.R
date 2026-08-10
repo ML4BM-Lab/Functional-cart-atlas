@@ -158,7 +158,7 @@ selected_genesets <- c(
 
 Final_result_3G_sel <- Final_result_3G %>%
   filter(Geneset %in% selected_genesets) %>%
-  mutate(Geneset = factor(Geneset, levels = selected_genesets))  # respeta tu orden
+  mutate(Geneset = factor(Geneset, levels = selected_genesets))  # preserves your order
 
 p3G <- plotZenithResults(Final_result_3G_sel, Inf, Inf, sortByGeneset = FALSE)
 

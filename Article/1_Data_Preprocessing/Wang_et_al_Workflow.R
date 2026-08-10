@@ -288,7 +288,7 @@ for (i in seq_along(Seurat_list_Wang)) {
         # Adjust thresholds per dataset
         geom_vline(xintercept = Max_mito_ratio[i], col = colores[i], alpha = 0.6, linetype = "dotted") +
         labs(
-            title = "Mitocondrial ratio per cell:",
+            title = "Mitochondrial ratio per cell:",
             subtitle = paste0(unique(Seurat_list_Wang[[i]]@meta.data$Product))
         )
 }
@@ -526,7 +526,7 @@ merged_metadata_df %>%
     geom_density(alpha = 0.2) +
     scale_x_log10() +
     theme_classic() +
-    ggtitle("Mitocondrial ratio per cell post-QC")
+    ggtitle("Mitochondrial ratio per cell post-QC")
 dev.off()
 
 # Violin plots

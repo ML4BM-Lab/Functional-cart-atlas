@@ -160,11 +160,11 @@ _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integratio
 _current_dir.mkdir(parents=True, exist_ok=True)
 sc.settings.figdir = _current_dir
 
-sc.pl.stacked_violin(adata_CD4, var_names=["CD3D", "CD4", "CD8A"], groupby='leiden_Sub_Res_0.7', title="Marcadores basicos de celulas T", save="1_Basic_T_markers.pdf") # 1. Basic T cell markers
-sc.pl.stacked_violin(adata_CD4, var_names=["FOXP3", "IL2RA", "IL17A"], groupby='leiden_Sub_Res_0.7', title="Otros marcadores", save="2_Other_markers.pdf") # 2. Other markers
-sc.pl.stacked_violin(adata_CD4, var_names=["NKG7", "GNLY", "IFNG", "PRF1", "GZMK", "GZMB"], groupby='leiden_Sub_Res_0.7', title="Citotoxicidad", save="3_Cytotoxicity.pdf") # 3. Cytotoxicity markers
-sc.pl.stacked_violin(adata_CD4, var_names=["CD69", "CD27", "CD28", "HLA-DRA", "TNFRSF9"], groupby='leiden_Sub_Res_0.7', title="Activacion", save="4_Activation.pdf") # 4. Activation markers
-sc.pl.stacked_violin(adata_CD4, var_names=["TCF7", "CCR7", "SELL"], groupby='leiden_Sub_Res_0.7', title="Memoria", save="5_Memory.pdf") # 5. Memory markers
+sc.pl.stacked_violin(adata_CD4, var_names=["CD3D", "CD4", "CD8A"], groupby='leiden_Sub_Res_0.7', title="Basic T cell markers", save="1_Basic_T_markers.pdf") # 1. Basic T cell markers
+sc.pl.stacked_violin(adata_CD4, var_names=["FOXP3", "IL2RA", "IL17A"], groupby='leiden_Sub_Res_0.7', title="Other markers", save="2_Other_markers.pdf") # 2. Other markers
+sc.pl.stacked_violin(adata_CD4, var_names=["NKG7", "GNLY", "IFNG", "PRF1", "GZMK", "GZMB"], groupby='leiden_Sub_Res_0.7', title="Cytotoxicity", save="3_Cytotoxicity.pdf") # 3. Cytotoxicity markers
+sc.pl.stacked_violin(adata_CD4, var_names=["CD69", "CD27", "CD28", "HLA-DRA", "TNFRSF9"], groupby='leiden_Sub_Res_0.7', title="Activation", save="4_Activation.pdf") # 4. Activation markers
+sc.pl.stacked_violin(adata_CD4, var_names=["TCF7", "CCR7", "SELL"], groupby='leiden_Sub_Res_0.7', title="Memory", save="5_Memory.pdf") # 5. Memory markers
 sc.pl.stacked_violin(adata_CD4, var_names=["PTPRC"], groupby='leiden_Sub_Res_0.7', title="CD45", save="6_CD45.pdf") # 6. CD45
 
 sc.pl.violin(adata_CD4, keys=["CD3D", "CD4", "CD8A"], groupby='leiden_Sub_Res_0.7', stripplot=False, save="1_Basic_T_markers.pdf") # 1. Basic T cell markers
@@ -215,16 +215,16 @@ adata_CD4.obs['cluster_dummy9'] = adata_CD4.obs['cluster_dummy9']*1
 sc.pl.umap(adata_CD4, color='cluster_dummy9', frameon=False)
 
 # %% More markers doubts
-sc.pl.stacked_violin(adata_CD4, var_names=["PRF1", "IFNG", "GZMK", "GZMB", "CD8A", "NKG7"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Cytotoxic (effector) function
-sc.pl.stacked_violin(adata_CD4, var_names=["GNLY", "GZMA", "GZMM", "CCL5", "CCL3", "CCL4"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Cytotoxic (effector) function 2
-sc.pl.stacked_violin(adata_CD4, var_names=["CD69", "CD27", "CD28", "IL2RA"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Activation markers
-sc.pl.stacked_violin(adata_CD4, var_names=["IL10", "IL32"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Cytokine secretion
-sc.pl.stacked_violin(adata_CD4, var_names=["TCF7", "CCR7", "SELL", "IL7R"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Memory / Memory-like
-sc.pl.stacked_violin(adata_CD4, var_names=["ZWINT", "MKI67", "TUBA1B", "TUBB"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Proliferation
-sc.pl.stacked_violin(adata_CD4, var_names=["HAVCR2", "TIGIT", "LAG3", "CTLA4"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Exhaustion
-sc.pl.stacked_violin(adata_CD4, var_names=["KLRG1", "B3GAT1", "TIGIT", "CD160"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Senescence
-sc.pl.stacked_violin(adata_CD4, var_names=["SELL", "CXCR3", "CCR7", "CD44"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Other memory markers
-sc.pl.stacked_violin(adata_CD4, var_names=["TBX21", "B3GAT1", "SELL", "CD44"], groupby='leiden_Sub_Res_0.7', title="Marcadores dudas") # Other memory markers 2
+sc.pl.stacked_violin(adata_CD4, var_names=["PRF1", "IFNG", "GZMK", "GZMB", "CD8A", "NKG7"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Cytotoxic (effector) function
+sc.pl.stacked_violin(adata_CD4, var_names=["GNLY", "GZMA", "GZMM", "CCL5", "CCL3", "CCL4"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Cytotoxic (effector) function 2
+sc.pl.stacked_violin(adata_CD4, var_names=["CD69", "CD27", "CD28", "IL2RA"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Activation markers
+sc.pl.stacked_violin(adata_CD4, var_names=["IL10", "IL32"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Cytokine secretion
+sc.pl.stacked_violin(adata_CD4, var_names=["TCF7", "CCR7", "SELL", "IL7R"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Memory / Memory-like
+sc.pl.stacked_violin(adata_CD4, var_names=["ZWINT", "MKI67", "TUBA1B", "TUBB"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Proliferation
+sc.pl.stacked_violin(adata_CD4, var_names=["HAVCR2", "TIGIT", "LAG3", "CTLA4"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Exhaustion
+sc.pl.stacked_violin(adata_CD4, var_names=["KLRG1", "B3GAT1", "TIGIT", "CD160"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Senescence
+sc.pl.stacked_violin(adata_CD4, var_names=["SELL", "CXCR3", "CCR7", "CD44"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Other memory markers
+sc.pl.stacked_violin(adata_CD4, var_names=["TBX21", "B3GAT1", "SELL", "CD44"], groupby='leiden_Sub_Res_0.7', title="Markers for resolving cell identity") # Other memory markers 2
 
 # %% Gene Set Analysis -- Preprocessing steps
 gene_set_names = gseapy.get_library_name(organism='Human')

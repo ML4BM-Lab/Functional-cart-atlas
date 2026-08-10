@@ -238,7 +238,7 @@ rgb_array = np.array([[list(x) for x in row] for row in rgb_matrix.to_numpy()], 
 
 # Plot heatmap
 fig, ax = plt.subplots(figsize=(len(Df_heatmap) * 1.2, len(cols) * 0.3 + 2))
-ax.imshow(rgb_array, aspect=3, interpolation='nearest', rasterized=True)  # 👈 rasterized evita PDF corrupto
+ax.imshow(rgb_array, aspect=3, interpolation='nearest', rasterized=True)  # 👈 rasterized prevents PDF corruption
 
 ax.set_yticks(range(len(cols)))
 ax.set_yticklabels(cols, fontsize=10)

@@ -208,7 +208,7 @@ counts_matrix <- assay(filtered_sce, "counts")
 # Filter genes from the list that are in count matrix
 genes_presentes <- genes_IL10[genes_IL10 %in% rownames(counts_matrix)]
 
-# Identify genes with total expresion 0
+# Identify genes with total expression 0
 expresion_total <- rowSums(counts_matrix[genes_presentes, , drop = FALSE])
 table(expresion_total)
 

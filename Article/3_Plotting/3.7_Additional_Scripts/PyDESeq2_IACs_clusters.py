@@ -256,11 +256,11 @@ pct_pydeseq2_in_dreamlet = (
 
 print(f"Genes Dreamlet padj < 0.05: {len(set_dreamlet)}")
 print(f"Genes PyDESeq2 padj < 0.05: {len(set_pydeseq2)}")
-print(f"Genes comunes: {len(genes_common)}")
-print(f"Solo en Dreamlet: {len(genes_only_dreamlet)}")
-print(f"Solo en PyDESeq2: {len(genes_only_pydeseq2)}")
-print(f"% de genes Dreamlet presentes en PyDESeq2: {pct_dreamlet_in_pydeseq2:.2f}%")
-print(f"% de genes PyDESeq2 presentes en Dreamlet: {pct_pydeseq2_in_dreamlet:.2f}%")
+print(f"Common genes: {len(genes_common)}")
+print(f"Only in Dreamlet: {len(genes_only_dreamlet)}")
+print(f"Only in PyDESeq2: {len(genes_only_pydeseq2)}")
+print(f"% of Dreamlet genes present in PyDESeq2: {pct_dreamlet_in_pydeseq2:.2f}%")
+print(f"% of PyDESeq2 genes present in Dreamlet: {pct_pydeseq2_in_dreamlet:.2f}%")
 
 # %% Save comparison summary
 comparison_summary = {

@@ -515,12 +515,12 @@ if (Create_h5ad) {
     Seurat_merged2@meta.data <- Seurat_merged@meta.data
     SaveH5Seurat(Seurat_merged2, filename = .output_path(.current_dir, "Seurat_merged.h5Seurat"))
     Convert(.input_path(.current_dir, "Seurat_merged.h5Seurat"), dest = "h5ad")
-    print("Correctamente guardado")
+    print("Saved successfully")
 } else {
     load_Seurat_merged <- LoadH5Seurat(.input_path(.current_dir, "Seurat_merged.h5Seurat"))
     Seurat_merged <- load_Seurat_merged
     rm(load_Seurat_merged)
-    print("Correctamente cargado")
+    print("Loaded successfully")
 }
 
 ############## PAUSE ##############

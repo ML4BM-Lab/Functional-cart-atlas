@@ -197,7 +197,7 @@ if (FALSE) {
         Seurat_list_Haradvala_reintification[[i]] <- RenameCells(Seurat_list_Haradvala_reintification[[i]], new.name = new_cell_name)
 
         # DONE
-        print(paste0("DONE nº", i))
+        print(paste0("DONE no. ", i))
     }
 
     # Merge in one object to split after bt the newly created column
@@ -399,7 +399,7 @@ if (FALSE) {
 .current_dir <- file.path(project_dir, "Resultados", "Haradvala_et_al")
 Seurat_list_Haradvala <- readRDS(.input_path(.current_dir, "Seurat_list_Haradvala_inicio.RDS"))
 
-## Count number of cells with CAR+ per sample to get the number of inicial cells pre-QC
+## Count number of cells with CAR+ per sample to get the number of initial cells pre-QC
 Sum_CAR <- list()
 Sum_Kymriah <- list()
 Sum_Yescarta <- list()
@@ -613,7 +613,7 @@ for (i in seq_along(Seurat_list_Haradvala)) {
         # Adjust thresholds per dataset
         geom_vline(xintercept = Max_mito_ratio[i], col = colores[i], alpha = 0.6, linetype = "dotted") +
         labs(
-            title = "Mitocondrial ratio per cell:",
+            title = "Mitochondrial ratio per cell:",
             subtitle = paste0(unique(Seurat_list_Haradvala[[i]]@meta.data$Product))
         )
 }
@@ -832,16 +832,16 @@ names_to_remove <- list()
 for (i in seq_along(Seurat_list_Haradvala)) {
     if (any(rownames(Seurat_list_Haradvala[[i]]) == "Kymriah") && !any(rownames(Seurat_list_Haradvala[[i]]) == "Yescarta")) {
         Seurat_list_Haradvala[[i]] <- subset(x = Seurat_list_Haradvala[[i]], subset = Kymriah > 0)
-        print("Caso 1")
+        print("Case 1")
     } else if (!any(rownames(Seurat_list_Haradvala[[i]]) == "Kymriah") && any(rownames(Seurat_list_Haradvala[[i]]) == "Yescarta")) {
         Seurat_list_Haradvala[[i]] <- subset(x = Seurat_list_Haradvala[[i]], subset = Yescarta > 0)
-        print("Caso 2")
+        print("Case 2")
     } else if (any(rownames(Seurat_list_Haradvala[[i]]) == "Kymriah") && any(rownames(Seurat_list_Haradvala[[i]]) == "Yescarta")) {
         Seurat_list_Haradvala[[i]] <- subset(x = Seurat_list_Haradvala[[i]], subset = Kymriah > 0 | Yescarta > 0)
-        print("Caso 3")
+        print("Case 3")
     } else {
-        print("Caso 4")
-        print(paste0(names(Seurat_list_Haradvala)[i], " es CAR-"))
+        print("Case 4")
+        print(paste0(names(Seurat_list_Haradvala)[i], " is CAR-"))
         names_to_remove <- c(names_to_remove, names(Seurat_list_Haradvala)[i])
         Sys.sleep(2)
     }
@@ -923,7 +923,7 @@ for (i in seq_along(Seurat_list_Haradvala)) {
 
         # Adjust thresholds per dataset
         labs(
-            title = "Mitocondrial ratio per cell:",
+            title = "Mitochondrial ratio per cell:",
             subtitle = paste0(unique(Seurat_list_Haradvala[[i]]@meta.data$Product))
         )
 }

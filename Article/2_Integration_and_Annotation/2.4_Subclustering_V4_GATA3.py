@@ -158,11 +158,11 @@ _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integratio
 _current_dir.mkdir(parents=True, exist_ok=True)
 sc.settings.figdir = _current_dir
 
-sc.pl.stacked_violin(adata_GATA3, var_names=["CD3D", "CD4", "CD8A"], groupby='leiden_Sub_Res_0.3', title="Marcadores basicos de celulas T", save="1_Basic_T_markers.pdf") # 1. Basic T cell markers
-sc.pl.stacked_violin(adata_GATA3, var_names=["FOXP3", "IL2RA", "IL17A"], groupby='leiden_Sub_Res_0.3', title="Otros marcadores", save="2_Other_markers.pdf") # 2. Other markers
-sc.pl.stacked_violin(adata_GATA3, var_names=["NKG7", "GNLY", "IFNG", "PRF1", "GZMK", "GZMB"], groupby='leiden_Sub_Res_0.3', title="Citotoxicidad", save="3_Cytotoxicity.pdf") # 3. Cytotoxicity markers
-sc.pl.stacked_violin(adata_GATA3, var_names=["CD69", "CD27", "CD28", "HLA-DRA", "TNFRSF9"], groupby='leiden_Sub_Res_0.3', title="Activacion", save="4_Activation.pdf") # 4. Activation markers
-sc.pl.stacked_violin(adata_GATA3, var_names=["TCF7", "CCR7", "SELL"], groupby='leiden_Sub_Res_0.3', title="Memoria", save="5_Memory.pdf") # 5. Memory markers
+sc.pl.stacked_violin(adata_GATA3, var_names=["CD3D", "CD4", "CD8A"], groupby='leiden_Sub_Res_0.3', title="Basic T cell markers", save="1_Basic_T_markers.pdf") # 1. Basic T cell markers
+sc.pl.stacked_violin(adata_GATA3, var_names=["FOXP3", "IL2RA", "IL17A"], groupby='leiden_Sub_Res_0.3', title="Other markers", save="2_Other_markers.pdf") # 2. Other markers
+sc.pl.stacked_violin(adata_GATA3, var_names=["NKG7", "GNLY", "IFNG", "PRF1", "GZMK", "GZMB"], groupby='leiden_Sub_Res_0.3', title="Cytotoxicity", save="3_Cytotoxicity.pdf") # 3. Cytotoxicity markers
+sc.pl.stacked_violin(adata_GATA3, var_names=["CD69", "CD27", "CD28", "HLA-DRA", "TNFRSF9"], groupby='leiden_Sub_Res_0.3', title="Activation", save="4_Activation.pdf") # 4. Activation markers
+sc.pl.stacked_violin(adata_GATA3, var_names=["TCF7", "CCR7", "SELL"], groupby='leiden_Sub_Res_0.3', title="Memory", save="5_Memory.pdf") # 5. Memory markers
 sc.pl.stacked_violin(adata_GATA3, var_names=["PTPRC"], groupby='leiden_Sub_Res_0.3', title="CD45", save="6_CD45.pdf") # 6. CD45
 
 sc.pl.violin(adata_GATA3, keys=["CD3D", "CD4", "CD8A"], groupby='leiden_Sub_Res_0.3', stripplot=False, save="1_Basic_T_markers.pdf") # 1. Basic T cell markers

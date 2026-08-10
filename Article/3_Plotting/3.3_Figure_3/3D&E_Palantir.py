@@ -95,7 +95,7 @@ warnings.filterwarnings(
 
 ## Custom functions
 def get_expr_vector(adata, gene):
-    """Devuelve expresion 1D (cells,) para un gen en ad.X."""
+    """Returns a 1D expression vector (cells,) for a gene in ad.X."""
     if gene not in adata.var_names:
         return None
     gidx = np.where(adata.var_names == gene)[0][0]

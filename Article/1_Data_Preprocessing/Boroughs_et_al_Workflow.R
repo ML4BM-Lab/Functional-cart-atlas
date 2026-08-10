@@ -279,7 +279,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
         # Adjust thresholds per dataset
         geom_vline(xintercept = Max_mito_ratio[i], col = colores[i], alpha = 0.6, linetype = "dotted") +
         labs(
-            title = "Mitocondrial ratio per cell:",
+            title = "Mitochondrial ratio per cell:",
             subtitle = paste0(unique(Seurat_list_Boroughs[[i]]@meta.data$Product))
         )
 }
@@ -532,7 +532,7 @@ for (i in seq_along(Seurat_list_Boroughs)) {
 
         # Adjust thresholds per dataset
         labs(
-            title = "Mitocondrial ratio per cell:",
+            title = "Mitochondrial ratio per cell:",
             subtitle = paste0(unique(Seurat_list_Boroughs[[i]]@meta.data$Product))
         )
 }

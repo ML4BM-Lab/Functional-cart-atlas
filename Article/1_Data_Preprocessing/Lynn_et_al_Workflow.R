@@ -296,7 +296,7 @@ merged_metadata_df %>%
     geom_vline(xintercept = Max_mito_ratio[2], col = colores[2], alpha = 0.6, linetype = "dotted") +
     geom_vline(xintercept = Max_mito_ratio[3], col = colores[3], alpha = 0.6, linetype = "dotted") +
     geom_vline(xintercept = Max_mito_ratio[4], col = colores[4], alpha = 0.6, linetype = "dotted") +
-    ggtitle("Mitocondrial ratio per cell")
+    ggtitle("Mitochondrial ratio per cell")
 dev.off()
 
 # Visualize the distribution of complexity per cell
@@ -523,7 +523,7 @@ merged_metadata_df %>%
     geom_density(alpha = 0.2) +
     scale_x_log10() +
     theme_classic() +
-    ggtitle("Mitocondrial ratio per cell post-QC")
+    ggtitle("Mitochondrial ratio per cell post-QC")
 dev.off()
 
 # Violin plots
