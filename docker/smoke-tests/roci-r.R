@@ -17,14 +17,30 @@ if (!identical(actual_r, expected_r)) {
 
 packages <- c(
   "AUCell",
+  "BiocParallel",
   "Cairo",
+  "EnrichmentBrowser",
+  "GSEABase",
+  "SMFilter",
+  "SingleCellExperiment",
+  "coin",
+  "cowplot",
+  "dplyr",
   "dreamlet",
   "edgeR",
+  "ggplot2",
+  "ggsignif",
+  "kableExtra",
+  "patchwork",
+  "reshape2",
   "reticulate",
   "scater",
-  "SingleCellExperiment",
+  "scattermore",
+  "see",
+  "tidyverse",
   "variancePartition",
-  "zellkonverter"
+  "zellkonverter",
+  "zenith"
 )
 for (package in packages) {
   if (!requireNamespace(package, quietly = TRUE)) {

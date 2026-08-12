@@ -6,7 +6,7 @@ FROM ubuntu:20.04
 
 LABEL org.opencontainers.image.title="Functional CAR-T Atlas - Python (roci)" \
       org.opencontainers.image.description="Python environment recovered from the Rocinante workstation" \
-      org.opencontainers.image.version="0.1.0"
+      org.opencontainers.image.version="0.2.0"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \

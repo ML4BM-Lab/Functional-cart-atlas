@@ -8,9 +8,18 @@ import tempfile
 from pathlib import Path
 
 import anndata
+import matplotlib
+import numba
 import numpy as np
 import palantir
+import pandas
+import pydeseq2
 import scanpy as sc
+import scipy
+import seaborn
+import statsmodels
+from pydeseq2.dds import DeseqDataSet
+from pydeseq2.ds import DeseqStats
 
 
 def package_version(distribution: str) -> str:
@@ -52,6 +61,38 @@ sc.tl.pca(mini, n_comps=2)
 if mini.obsm["X_pca"].shape != (5, 2):
     raise RuntimeError("Unexpected Scanpy PCA output")
 
+# Exercise the same PyDESeq2 fit and contrast path used by the Rocinante
+# differential-expression scripts, not just its top-level imports.
+rng = np.random.default_rng(2504)
+counts = pandas.DataFrame(
+    rng.negative_binomial(20, 0.5, size=(8, 30)),
+    index=[f"sample_{index}" for index in range(8)],
+    columns=[f"gene_{index}" for index in range(30)],
+)
+counts.loc[counts.index[4:], "gene_0"] += 30
+metadata = pandas.DataFrame(
+    {"condition": ["control"] * 4 + ["treated"] * 4},
+    index=counts.index,
+)
+dds = DeseqDataSet(
+    counts=counts,
+    metadata=metadata,
+    design_factors="condition",
+    refit_cooks=False,
+    quiet=True,
+)
+dds.deseq2()
+stats = DeseqStats(
+    dds,
+    contrast=("condition", "treated", "control"),
+    quiet=True,
+)
+stats.summary()
+if stats.results_df.shape[0] != counts.shape[1]:
+    raise RuntimeError("PyDESeq2 returned an unexpected number of genes")
+if not np.isfinite(stats.results_df["baseMean"]).all():
+    raise RuntimeError("PyDESeq2 returned invalid base means")
+
 with tempfile.TemporaryDirectory() as directory:
     roundtrip_path = Path(directory) / "roci-python-smoke.h5ad"
     mini.write_h5ad(roundtrip_path)
@@ -65,5 +106,6 @@ print(
     f"scanpy={package_version('scanpy')}",
     f"anndata={package_version('anndata')}",
     f"palantir={package_version('palantir')}",
+    f"pydeseq2={package_version('pydeseq2')}",
     f"demo_shape={demo_shape}",
 )

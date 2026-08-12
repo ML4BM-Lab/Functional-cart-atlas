@@ -9,12 +9,25 @@ from pathlib import Path
 
 import anndata
 import bbknn
+import celltypist
+import gseapy
+import invoke
+import milopy
 import numpy as np
+import plotnine
+import rich
 import scanpy as sc
 import scarches
+import scgraph
+import scib_metrics
+import scipy
+import scProportionTest
+import seaborn
 import scvi
 import torch
 from rpy2.robjects import r
+from scib_metrics.benchmark import BatchCorrection, Benchmarker, BioConservation
+from skmisc.loess import loess
 
 
 def package_version(distribution: str) -> str:
@@ -56,6 +69,23 @@ sc.tl.pca(mini, n_comps=2)
 if mini.obsm["X_pca"].shape != (5, 2):
     raise RuntimeError("Unexpected Scanpy PCA output")
 
+# Scanpy's Seurat v3 highly-variable-gene method imports scikit-misc lazily.
+# Exercise the actual code path rather than checking only that Scanpy imports.
+rng = np.random.default_rng(2504)
+hvg = anndata.AnnData(rng.poisson(5, size=(80, 100)).astype(np.float32))
+hvg.layers["counts"] = hvg.X.copy()
+hvg.obs["batch"] = np.repeat(["batch_a", "batch_b"], 40)
+sc.pp.highly_variable_genes(
+    hvg,
+    flavor="seurat_v3",
+    n_top_genes=20,
+    layer="counts",
+    batch_key="batch",
+    span=0.6,
+)
+if int(hvg.var["highly_variable"].sum()) != 20:
+    raise RuntimeError("Unexpected Seurat v3 highly-variable-gene result")
+
 product = torch.tensor([[1.0, 2.0]]) @ torch.tensor([[3.0], [4.0]])
 if product.item() != 11.0:
     raise RuntimeError("Unexpected PyTorch matrix product")
@@ -79,6 +109,8 @@ print(
     f"torch={package_version('torch')}",
     f"scvi-tools={package_version('scvi-tools')}",
     f"scArches={package_version('scArches')}",
+    f"scib-metrics={package_version('scib-metrics')}",
+    f"scikit-misc={package_version('scikit-misc')}",
     f"edgeR={edge_r_version}",
     f"demo_shape={demo_shape}",
 )

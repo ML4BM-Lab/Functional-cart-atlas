@@ -3,7 +3,7 @@
   "images": [
     {
       "id": "roci-python",
-      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-python-roci@sha256:d6a0bfe8fe622aaf4ed08a506cf237cc66947909c0fbbf8c66128aae4ba62b13"
+      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-python-roci@sha256:a87d94abb3d9922d5bf01d31024bdf34c02eab8c53229b7cf9ad2ac365605e7e"
     },
     {
       "id": "roci-r",
@@ -11,7 +11,7 @@
     },
     {
       "id": "marg-python",
-      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg@sha256:c8ee0cc6469f5ec34d145364a6be4f6efdd4e694f4406158c33f25f65f3075fd"
+      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg@sha256:36bb2885c01f5dcf83be8c22b8f2bc657a4e6d092c85122bb6a78d6821a6ea81"
     },
     {
       "id": "marg-r",
