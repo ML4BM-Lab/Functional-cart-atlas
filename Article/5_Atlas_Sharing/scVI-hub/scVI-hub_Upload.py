@@ -59,7 +59,7 @@ from scvi.hub import HubMetadata, HubModel, HubModelCardHelper
 import os
 
 # %% 0. Load adata used to train model
-First_Time = False
+First_Time = True
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4')
 if First_Time:
     adata = sc.read(

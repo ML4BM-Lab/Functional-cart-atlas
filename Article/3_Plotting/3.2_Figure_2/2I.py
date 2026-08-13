@@ -168,7 +168,7 @@ adata_Second = adata_Second[~mask].copy()
 ## Make and Save/Load the proportions test
 results_dir = project_dir / 'Resultados' / 'Joined_datasets' / 'Post_Integration' / 'Data'
 
-if False:
+if True:
     results_1 = pt.permutation_test(adata_Second,"F","M",group_col='Sex',cell_type_col='manual_celltype_annotation_high',nperm=10000,alpha=0.05,n_bootstrap=10000,verbose=True)
     results_1.to_pickle(_output_path(results_dir, "F_CR_vs_M_CR.pkl"))
 else:

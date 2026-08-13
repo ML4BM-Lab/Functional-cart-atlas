@@ -82,11 +82,11 @@ adata_Query = adata_V5.copy()
 adata_Query = adata_Query[adata_Query.obs["orig.ident"] == "Jordana_et_al"]
 
 # %% Switches
-Train = False
-Train_2 = False
-Save_h5ad_1 = False
-Save_h5ad_2 = False
-Save_h5ad_3 = False
+Train = True
+Train_2 = True
+Save_h5ad_1 = True
+Save_h5ad_2 = True
+Save_h5ad_3 = True
 Save_h5ad_4 = True
 
 # %% Create a layer with the counts - Is what scVI uses

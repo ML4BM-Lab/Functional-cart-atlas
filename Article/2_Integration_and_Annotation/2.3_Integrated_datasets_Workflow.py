@@ -74,11 +74,11 @@ import seaborn as sns
 import pandas as pd
 
 # %% Switches
-Train = False
-Save_h5ad = False
-Save_h5ad_2 = False
-Save_h5ad_2_5 = False
-Save_h5ad_3 = False
+Train = True
+Save_h5ad = True
+Save_h5ad_2 = True
+Save_h5ad_2_5 = True
+Save_h5ad_3 = True
 
 # %% Set a random seed
 random.seed(2504)

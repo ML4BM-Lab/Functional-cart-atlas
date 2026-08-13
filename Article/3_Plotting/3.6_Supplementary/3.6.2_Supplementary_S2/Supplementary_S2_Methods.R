@@ -117,7 +117,7 @@ palette <- c(
 )
 
 ##### Switches #####
-Primera_vez <- FALSE
+Primera_vez <- TRUE
 
 ##### Loading the different datasets
 if (Primera_vez) {
@@ -212,7 +212,7 @@ if (Primera_vez) {
 
     Seurat_merged <- merge(x = Rodriguez_marquez_merged, y = c(Seurat_list_Xhangolli, Seurat_list_Wang, Seurat_list_Lynn, Seurat_list_Boroughs, Seurat_list_Bai))
 
-    if (FALSE) {
+    if (TRUE) {
         # Save version with raw counts
         SaveH5Seurat(
             Seurat_merged,

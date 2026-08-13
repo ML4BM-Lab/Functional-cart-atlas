@@ -111,7 +111,7 @@ set.seed(2504)
 
 
 ##### Switches #####
-Primera_vez <- FALSE
+Primera_vez <- TRUE
 
 
 ###### Load data from CellRanger ######

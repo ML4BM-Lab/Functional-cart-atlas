@@ -104,11 +104,11 @@ set.seed(2504)
 
 
 ###### Data loading from CellRanger ######
-if (FALSE) {
+if (TRUE) {
     .current_dir <- file.path(project_dir, "Resultados", "Haradvala_et_al", "Count_Matrices", "Cell_Ranger")
     Patient_list <- gsub("run_", "", dir(path = .current_dir)[dir(path = .current_dir) %>% grep(pattern = "run_")])
 
-    if (FALSE) {
+    if (TRUE) {
         Seurat_list_Haradvala <- list()
         for (contador in Patient_list) {
             cell_ranger_dir <- file.path(.current_dir, paste0("run_", contador, "/outs/filtered_feature_bc_matrix"))

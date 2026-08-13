@@ -63,7 +63,7 @@ import pandas as pd
 import gseapy
 
 # %% Switches
-Save_h5ad = False
+Save_h5ad = True
 
 # %% Set a random seed
 random.seed(2504)

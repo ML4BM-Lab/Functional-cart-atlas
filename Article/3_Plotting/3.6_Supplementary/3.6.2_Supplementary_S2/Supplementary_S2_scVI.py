@@ -100,7 +100,7 @@ palette = [
 ]
 
 # %% Switches
-Primera_vez = False
+Primera_vez = True
 
 #%% Read the data
 adata = sc.read(_require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration_methods_lab' / 'scVI' / 'Sin_GT_With_Python' / 'Seurat_merged_RAW_for_Py.h5ad')) # Obtained in Supplementary_S2_Methods.R script

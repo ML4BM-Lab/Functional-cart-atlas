@@ -101,7 +101,7 @@ set.seed(2504)
 
 
 ##### Switches #####
-Create_h5ad <- FALSE
+Create_h5ad <- TRUE
 
 
 ##### Loading the different datasets #####
