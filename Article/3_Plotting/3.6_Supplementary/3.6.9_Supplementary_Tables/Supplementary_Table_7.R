@@ -151,7 +151,7 @@ library(reticulate)
 use_python(python_path)
 anndata <- reticulate::import("anndata")
 
-.current_dir <- file.path(project_dir, "Codigo", "Rocinante_DEA", "Funciones")
+.current_dir <- file.path(.article_dir, "3_Plotting", "Functions")
 source(.input_path(.current_dir, "add_NTotalGenes.R"))
 
 ## Set random seed

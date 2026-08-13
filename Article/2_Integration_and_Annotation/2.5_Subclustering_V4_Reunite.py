@@ -14,6 +14,7 @@
 
 import argparse
 import os
+import sys
 from pathlib import Path
 
 _SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
@@ -51,6 +52,9 @@ def _input_path(directory, filename):
 def _output_path(directory, filename):
     directory.mkdir(parents=True, exist_ok=True)
     return directory / filename
+
+functions_dir = _require_path(_ARTICLE_DIR / "2_Integration_and_Annotation" / "Functions")
+sys.path.insert(0, str(functions_dir))
 
 # %% Load all the needed libraries
 import scanpy as sc

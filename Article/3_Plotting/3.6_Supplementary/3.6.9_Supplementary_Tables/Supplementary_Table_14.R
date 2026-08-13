@@ -118,18 +118,18 @@ library(reticulate)
 use_python(python_path)
 anndata <- reticulate::import("anndata")
 
-.current_dir <- file.path(project_dir, "Codigo", "Rocinante_DEA", "Funciones")
+.current_dir <- file.path(.article_dir, "3_Plotting", "Functions")
 source(.input_path(.current_dir, "add_NTotalGenes.R"))
 
 set.seed(2504)
 
 ##### Read files #####
 .current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_IP_All")
-Final_result_IP <- read.csv(.input_path(.current_dir, "Final_result_Fig_2J_IP.csv")) # This object is generated in Dreamlet_V5_BCMA_vs_CD19_IP_All.R script
+Final_result_IP <- read.csv(.input_path(.current_dir, "Final_result_Fig_5C_IP.csv")) # This object is generated in Dreamlet_V5_BCMA_vs_CD19_IP_All.R script
 Final_result_IP
 
 .current_dir <- file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_MID")
-Final_result_MID <- read.csv(.input_path(.current_dir, "Final_result_Fig_2J_MID.csv")) # This object is generated in Dreamlet_V5_BCMA_vs_CD19_MID.R script
+Final_result_MID <- read.csv(.input_path(.current_dir, "Final_result_Fig_5C_MID.csv")) # This object is generated in Dreamlet_V5_BCMA_vs_CD19_MID.R script
 Final_result_MID
 
 # Add ID column

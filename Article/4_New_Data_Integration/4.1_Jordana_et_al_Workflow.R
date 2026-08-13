@@ -1,7 +1,7 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Jordana_et_al_Workflow.R
+# Program: 4.1_Jordana_et_al_Workflow.R
 # Author: Sergio Cámara Peña
 # Date: 2023
 # Version: FINAL

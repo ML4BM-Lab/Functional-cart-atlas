@@ -91,7 +91,7 @@ from matplotlib.colors import to_rgb
 import matplotlib.patches as mpatches
 from collections import OrderedDict
 
-code_dir = project_dir / 'Codigo' / 'Codigo_datasets_atlas' / 'Datasets_Integration' / 'Initial_Version_Atlas'
+code_dir = _ARTICLE_DIR / '3_Plotting' / 'Functions'
 if not code_dir.is_dir():
     raise FileNotFoundError(f"Required input directory does not exist: {code_dir}")
 

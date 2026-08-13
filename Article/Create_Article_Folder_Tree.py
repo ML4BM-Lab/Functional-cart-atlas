@@ -43,10 +43,8 @@ project_dir = Path(_path_args.project_dir).expanduser().resolve()
 
 DIRECTORY_TREE = (
     ".huggingface",
-    "Codigo/Codigo_datasets_atlas/Datasets_Integration/Initial_Version_Atlas",
     "Codigo/Codigo_datasets_atlas/Datasets_Integration/Tests_labs",
     "Codigo/Gene_Markers_Info",
-    "Codigo/Rocinante_DEA/Funciones",
     "Datasets/Bai_et_al/Aligned_data_of_JITC_paper",
     "Datasets/Good_et_al/Downloaded_count_matrices",
     "Datasets/Haradhvala_et_al/Downloaded_data/Authors_Metadata_Reduced",
@@ -178,7 +176,7 @@ DIRECTORY_TREE = (
     "Resultados_Figuras/Suplementarias",
     "Resultados_V5/BCMA_vs_CD19_IP_All",
     "Resultados_V5/BCMA_vs_CD19_MID",
-    "Resultados_V5/Supplementary_Table_13",
+    "Resultados_V5/Supplementary_Table_14",
     "Shiny_app",
     "Shiny_app/shinyAtlas",
     "UCSC_Browser",

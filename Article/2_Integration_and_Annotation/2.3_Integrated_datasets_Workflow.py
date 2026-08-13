@@ -53,6 +53,9 @@ def _output_path(directory, filename):
     directory.mkdir(parents=True, exist_ok=True)
     return directory / filename
 
+functions_dir = _require_path(_ARTICLE_DIR / "2_Integration_and_Annotation" / "Functions")
+sys.path.insert(0, str(functions_dir))
+
 ##### Use scVI in its Python version #####
 ## Performed following these two tutorials: https://ccbskillssem.github.io/assets/scvi_notebook.html and https://docs.scvi-tools.org/en/stable/tutorials/notebooks/harmonization.html
 ## Youtube video with more info: https://www.youtube.com/watch?v=YT9qTuF6YFk&ab_channel=Sanbomics

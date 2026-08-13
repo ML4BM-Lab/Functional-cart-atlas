@@ -1,7 +1,7 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Celltypist_integ_plus_Jordanas.py
+# Program: 4.3_Celltypist_annotation_plus_Jordanas.py
 # Author: Sergio Cámara Peña
 # Date: 30/10/2024
 # Version: V5

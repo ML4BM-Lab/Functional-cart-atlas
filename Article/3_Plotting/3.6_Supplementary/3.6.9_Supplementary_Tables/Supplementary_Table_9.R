@@ -118,14 +118,14 @@ library(reticulate)
 use_python(python_path)
 anndata <- reticulate::import("anndata")
 
-.current_dir <- file.path(project_dir, "Codigo", "Rocinante_DEA", "Funciones")
+.current_dir <- file.path(.article_dir, "3_Plotting", "Functions")
 source(.input_path(.current_dir, "add_NTotalGenes.R"))
 
 set.seed(2504)
 
 ##### Read files #####
 .current_dir <- file.path(project_dir, "Resultados", "CD8_Short_Anytime_CR")
-Final_result <- read.csv(.input_path(.current_dir, "Final_result_Fig_2C.csv")) # This object is generated in Dreamlet_CD8_short_anytime_CR.R script
+Final_result <- read.csv(.input_path(.current_dir, "Final_result_Fig_3H.csv")) # This object is generated in Dreamlet_CD8_short_anytime_CR.R script
 Final_result
 
 library(dplyr)
