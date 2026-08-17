@@ -6,17 +6,17 @@ scripts under `Article/`.
 | Image | Main runtime | Auxiliary bridge | Validated size |
 |---|---|---|---:|
 | `functional-cart-atlas-python-roci:0.2.0` | Python 3.8.10 | — | 1,043,280,309 bytes |
-| `functional-cart-atlas-r-roci:0.1.0` | R 4.5.1 / Bioconductor 3.21 | Python 3.12.3 | 3,583,039,602 bytes |
+| `functional-cart-atlas-r-roci:0.2.0` | R 4.5.1 / Bioconductor 3.21 | Python 3.12.3 | 3,583,575,391 bytes |
 | `functional-cart-atlas-python-marg:0.2.0` | Python 3.8.10 | R 4.1.3 for rpy2/edgeR | 6,577,596,013 bytes |
-| `functional-cart-atlas-r-marg:0.1.0` | R 4.1.3 / Bioconductor 3.14 | Python 3.8.10 | 3,185,488,204 bytes |
+| `functional-cart-atlas-r-marg:0.2.0` | R 4.1.3 / Bioconductor 3.14 | Python 3.8.10 | 3,208,374,062 bytes |
 
 `roci` and `marg` identify the original Rocinante and Margaret workstation
 environments. The image tags are independent of the machine on which they are
 run.
 
-The Python `0.2.0` images include additional dependencies required by the
-machine-specific analysis scripts and identified during a complete dependency
-audit.
+The `0.2.0` images include additional dependencies required by the
+machine-specific analysis scripts and identified during complete dependency
+audits.
 
 ## Files required to build
 
@@ -44,11 +44,11 @@ The tested images are publicly available from GHCR:
 docker --context rootless pull \
   ghcr.io/ml4bm-lab/functional-cart-atlas-python-roci:0.2.0
 docker --context rootless pull \
-  ghcr.io/ml4bm-lab/functional-cart-atlas-r-roci:0.1.0
+  ghcr.io/ml4bm-lab/functional-cart-atlas-r-roci:0.2.0
 docker --context rootless pull \
   ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.0
 docker --context rootless pull \
-  ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg:0.1.0
+  ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg:0.2.0
 ```
 
 The examples below use the short local tags produced by the build commands.
@@ -68,7 +68,7 @@ docker --context rootless build --platform linux/amd64 \
 
 docker --context rootless build --platform linux/amd64 \
   --file docker/roci/Dockerfile.r \
-  --tag functional-cart-atlas-r-roci:0.1.0 \
+  --tag functional-cart-atlas-r-roci:0.2.0 \
   .
 
 docker --context rootless build --platform linux/amd64 \
@@ -78,7 +78,7 @@ docker --context rootless build --platform linux/amd64 \
 
 docker --context rootless build --platform linux/amd64 \
   --file docker/marg/Dockerfile.r \
-  --tag functional-cart-atlas-r-marg:0.1.0 \
+  --tag functional-cart-atlas-r-marg:0.2.0 \
   .
 ```
 
@@ -112,9 +112,9 @@ docker --context rootless run --rm \
 docker --context rootless run --rm \
   functional-cart-atlas-python-marg:0.2.0 python3 --version
 docker --context rootless run --rm \
-  functional-cart-atlas-r-roci:0.1.0 R --version
+  functional-cart-atlas-r-roci:0.2.0 R --version
 docker --context rootless run --rm \
-  functional-cart-atlas-r-marg:0.1.0 R --version
+  functional-cart-atlas-r-marg:0.2.0 R --version
 ```
 
 ## Local smoke tests
@@ -130,7 +130,7 @@ docker --context rootless run --rm \
 
 docker --context rootless run --rm \
   --mount type=bind,source="$PWD",target=/repo,readonly \
-  functional-cart-atlas-r-roci:0.1.0 \
+  functional-cart-atlas-r-roci:0.2.0 \
   Rscript /repo/docker/smoke-tests/roci-r.R /repo/Atlas_DEMO.h5ad
 
 docker --context rootless run --rm \
@@ -140,7 +140,7 @@ docker --context rootless run --rm \
 
 docker --context rootless run --rm \
   --mount type=bind,source="$PWD",target=/repo,readonly \
-  functional-cart-atlas-r-marg:0.1.0 \
+  functional-cart-atlas-r-marg:0.2.0 \
   Rscript /repo/docker/smoke-tests/marg-r.R /repo/Atlas_DEMO.h5ad
 ```
 
@@ -171,14 +171,16 @@ uses a personal rootless daemon.
 
 - Rocinante Python: 53 exact distributions; all 14 marked Python scripts parsed
   and synthetic Scanpy, H5AD, plotting, Palantir and PyDESeq2 workflows passed.
-- Rocinante R: 312 exact R packages; all 27 marked R scripts parsed and their
-  principal Bioconductor, plotting and reticulate/anndata paths passed.
+- Rocinante R: 313 exact R packages; all 27 marked R scripts parsed and their
+  principal Bioconductor, enrichment/JSON, plotting and reticulate/anndata
+  paths passed.
 - Margaret Python: 134 exact distributions; all 37 marked Python scripts parsed
   and Scanpy Seurat-v3 HVG, scIB, BBKNN, PyTorch, scVI/scArches, H5AD and
   rpy2/edgeR paths passed.
-- Margaret R: 309 exact R packages and 12 Python bridge distributions; all 23
-  marked R scripts parsed and Seurat, SeuratDisk, scater, DropletUtils, edgeR,
-  enrichment, graphics and reticulate/anndata paths passed.
+- Margaret R: 313 exact R packages and 12 Python bridge distributions; all 23
+  marked R scripts parsed and Seurat, SeuratDisk, FastMNN, scater,
+  DropletUtils, edgeR, enrichment/JSON, raster graphics and
+  reticulate/anndata paths passed.
 
 The final images were built and validated without modifying files under
 `Article/`.

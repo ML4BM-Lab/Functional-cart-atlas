@@ -17,6 +17,7 @@ if (!identical(actual_r, expected_r)) {
 
 packages <- c(
   "Cairo",
+  "batchelor",
   "DoubletFinder",
   "DropletUtils",
   "EnrichmentBrowser",
@@ -39,6 +40,7 @@ packages <- c(
   "enrichplot",
   "future",
   "ggplot2",
+  "ggrastr",
   "grid",
   "gtools",
   "harmony",
@@ -47,6 +49,7 @@ packages <- c(
   "patchwork",
   "readr",
   "reticulate",
+  "rjson",
   "rliger",
   "scales",
   "scater",
@@ -62,15 +65,50 @@ for (package in packages) {
   }
 }
 
+json_value <- rjson::fromJSON('{"functional":true,"count":2}')
+if (!isTRUE(json_value$functional) || !identical(as.integer(json_value$count), 2L)) {
+  stop("rjson did not parse the synthetic JSON payload", call. = FALSE)
+}
+
+set.seed(2504L)
 counts <- matrix(
-  c(1L, 0L, 3L, 2L, 4L, 1L, 2L, 3L, 1L, 1L, 2L, 4L),
-  nrow = 3L,
-  dimnames = list(paste0("gene", 1:3), paste0("cell", 1:4))
+  stats::rpois(50L * 30L, lambda = 5),
+  nrow = 50L,
+  dimnames = list(paste0("gene", 1:50), paste0("cell", 1:30))
 )
 seurat_object <- Seurat::CreateSeuratObject(counts = counts)
 seurat_object <- Seurat::NormalizeData(seurat_object, verbose = FALSE)
 if (!"RNA" %in% names(seurat_object@assays)) {
   stop("Seurat did not create the expected RNA assay", call. = FALSE)
+}
+
+raster_plot <- Seurat::VlnPlot(
+  seurat_object,
+  features = "gene1",
+  raster = TRUE,
+  pt.size = 0.1
+)
+if (!inherits(raster_plot, "ggplot")) {
+  stop("Seurat VlnPlot did not exercise the ggrastr raster path", call. = FALSE)
+}
+
+batch_a <- Seurat::CreateSeuratObject(counts = counts)
+batch_b_counts <- matrix(
+  stats::rpois(50L * 30L, lambda = 6),
+  nrow = 50L,
+  dimnames = list(paste0("gene", 1:50), paste0("cell", 31:60))
+)
+batch_b <- Seurat::CreateSeuratObject(counts = batch_b_counts)
+batch_a <- Seurat::NormalizeData(batch_a, verbose = FALSE)
+batch_b <- Seurat::NormalizeData(batch_b, verbose = FALSE)
+fast_mnn <- SeuratWrappers::RunFastMNN(
+  object.list = list(batch_a, batch_b),
+  features = rownames(counts),
+  k = 5L,
+  d = 10L
+)
+if (!"mnn" %in% names(fast_mnn@reductions)) {
+  stop("RunFastMNN did not create the expected mnn reduction", call. = FALSE)
 }
 
 sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = counts))

@@ -47,7 +47,7 @@ COPY environments/roci/Docker/renv.runtime.lock /opt/functional-cart-atlas/renv.
 
 # Install into a site library that remains visible when the final container
 # starts in /workspace; a project-local renv library would require activation.
-RUN R -q -e "install.packages('https://cloud.r-project.org/src/contrib/renv_1.2.3.tar.gz', repos = NULL, type = 'source')" \
+RUN R -q -e "install.packages('https://cloud.r-project.org/src/contrib/Archive/renv/renv_1.2.3.tar.gz', repos = NULL, type = 'source')" \
     && R -q -e "renv::restore(lockfile = '/opt/functional-cart-atlas/renv.lock', library = '/usr/local/lib/R/site-library', prompt = FALSE)"
 
 
@@ -65,7 +65,7 @@ FROM rocker/r-ver:4.5.1
 
 LABEL org.opencontainers.image.title="Functional CAR-T Atlas - R (roci)" \
       org.opencontainers.image.description="R runtime for Functional CAR-T Atlas scripts executed on Rocinante" \
-      org.opencontainers.image.version="0.1.0"
+      org.opencontainers.image.version="0.2.0"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     RENV_CONFIG_AUTOLOADER_ENABLED=FALSE \

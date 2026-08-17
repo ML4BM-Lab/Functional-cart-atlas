@@ -28,7 +28,7 @@ WORKDIR /opt/functional-cart-atlas
 
 COPY environments/marg/Docker/renv.python-bridge.lock /opt/functional-cart-atlas/renv.lock
 
-RUN R -q -e "install.packages('https://cloud.r-project.org/src/contrib/renv_1.2.3.tar.gz', repos = NULL, type = 'source')" \
+RUN R -q -e "install.packages('https://cloud.r-project.org/src/contrib/Archive/renv/renv_1.2.3.tar.gz', repos = NULL, type = 'source')" \
     && R -q -e "renv::restore(lockfile = '/opt/functional-cart-atlas/renv.lock', library = '/usr/local/lib/R/site-library', prompt = FALSE)"
 
 # rpy2 links against the Rocker R build. These development symlinks are needed

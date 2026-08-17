@@ -34,6 +34,7 @@ packages <- c(
   "patchwork",
   "reshape2",
   "reticulate",
+  "rjson",
   "scater",
   "scattermore",
   "see",
@@ -46,6 +47,11 @@ for (package in packages) {
   if (!requireNamespace(package, quietly = TRUE)) {
     stop(sprintf("Required package is unavailable: %s", package), call. = FALSE)
   }
+}
+
+json_value <- rjson::fromJSON('{"functional":true,"count":2}')
+if (!isTRUE(json_value$functional) || !identical(as.integer(json_value$count), 2L)) {
+  stop("rjson did not parse the synthetic JSON payload", call. = FALSE)
 }
 
 counts <- matrix(

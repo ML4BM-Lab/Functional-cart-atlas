@@ -7,7 +7,7 @@
     },
     {
       "id": "roci-r",
-      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-r-roci@sha256:92340c97e4ebd668a164bfbe27eda1bb956576d993c1e170798d2086d7374b67"
+      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-r-roci@sha256:b8d9f0861f758f13e7e3b07ee66edb07899c89a1e1d5fba204e21f4162d25e25"
     },
     {
       "id": "marg-python",
@@ -15,7 +15,7 @@
     },
     {
       "id": "marg-r",
-      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg@sha256:bea11be687095da58083d5ce22427ee6c88e9cf075e4ade9567b1b7b2a2cd714"
+      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg@sha256:2548f9a0872d91808aa8badb0ad52b0564dd2095a6a7eb7bc99d8b8b7e7527cc"
     }
   ]
 }

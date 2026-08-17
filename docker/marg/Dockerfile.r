@@ -75,7 +75,7 @@ COPY environments/marg/Docker/renv.runtime.lock /opt/functional-cart-atlas/renv.
 
 # Install into the visible site library; a project-local renv library would no
 # longer be active after the final container changes to /workspace.
-RUN R -q -e "install.packages('https://cloud.r-project.org/src/contrib/renv_1.2.3.tar.gz', repos = NULL, type = 'source')" \
+RUN R -q -e "install.packages('https://cloud.r-project.org/src/contrib/Archive/renv/renv_1.2.3.tar.gz', repos = NULL, type = 'source')" \
     && R -q -e "stopifnot(identical(renv::config\$install.remotes(), FALSE))" \
     && R -q -e "renv::restore(lockfile = '/opt/functional-cart-atlas/renv.lock', library = '/usr/local/lib/R/site-library', prompt = FALSE)"
 
@@ -93,7 +93,7 @@ FROM rocker/r-ver:4.1.3 AS r-runtime
 
 LABEL org.opencontainers.image.title="Functional CAR-T Atlas - R (marg)" \
       org.opencontainers.image.description="R runtime for Functional CAR-T Atlas scripts executed on Margaret" \
-      org.opencontainers.image.version="0.1.0"
+      org.opencontainers.image.version="0.2.0"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     RENV_CONFIG_AUTOLOADER_ENABLED=FALSE \
@@ -172,7 +172,7 @@ LABEL org.opencontainers.image.authors="Carl Boettiger <cboettig@ropensci.org>" 
       org.opencontainers.image.vendor="Rocker Project" \
       org.opencontainers.image.title="Functional CAR-T Atlas - R (marg)" \
       org.opencontainers.image.description="R runtime for Functional CAR-T Atlas scripts executed on Margaret" \
-      org.opencontainers.image.version="0.1.0"
+      org.opencontainers.image.version="0.2.0"
 
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     R_VERSION=4.1.3 \
