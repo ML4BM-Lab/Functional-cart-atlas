@@ -25,6 +25,9 @@ Article/
 ├─ 3_Plotting/                       Manuscript figures and tables.
 ├─ 4_New_Data_Integration/           New-dataset integration and scArches-scANVI transfer.
 ├─ 5_Atlas_Sharing/                  ShinyCell, scVI-hub and UCSC Cell Browser resources.
+├─ Input/                             Shared supporting input files.
+│  ├─ cycle.rda                      Cell-cycle gene lists used during preprocessing.
+│  └─ Firmas_Atlas.csv               Custom gene signatures used in downstream analyses.
 └─ Create_Article_Folder_Tree.py     Creates the analysis directory structure.
 
 bioRxiv-deprecated/                  Archived code associated with the earlier preprint version.
