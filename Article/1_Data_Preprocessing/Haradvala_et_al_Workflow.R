@@ -420,7 +420,12 @@ for (contador in seq_along(Seurat_list_Haradvala)) {
 }
 
 ### Add more metadata: novelty score and mito ratio
-load(.input_path(project_dir, "Gene_Markers_Info", "cycle.rda"))
+cycle_path <- file.path(project_dir, "Gene_Markers_Info", "cycle.rda")
+if (!file.exists(cycle_path)) {
+    cycle_path <- .input_path(project_dir, "Input", "cycle.rda")
+}
+
+load(cycle_path)
 for (contador in seq_along(Seurat_list_Haradvala)) {
     Seurat_list_Haradvala[[contador]]$log10GenesPerUMI <- log10(Seurat_list_Haradvala[[contador]]$nFeature_RNA) / log10(Seurat_list_Haradvala[[contador]]$nCount_RNA)
 

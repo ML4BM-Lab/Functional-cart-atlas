@@ -512,7 +512,12 @@ saveRDS(Seurat_list_Li_X, file = .output_path(.current_dir, "PostQC_CellRanger_L
 # rm(list = ls())
 .current_dir <- file.path(project_dir, "Resultados", "Li_X_et_al", "RDS")
 Seurat_list_Li_X <- readRDS(.input_path(.current_dir, "PostQC_CellRanger_Li_RDS.rds"))
-load(.input_path(project_dir, "Codigo", "Gene_Markers_Info", "cycle.rda"))
+cycle_path <- file.path(project_dir, "Codigo", "Gene_Markers_Info", "cycle.rda")
+if (!file.exists(cycle_path)) {
+    cycle_path <- .input_path(project_dir, "Input", "cycle.rda")
+}
+
+load(cycle_path)
 
 for (i in seq_along(Seurat_list_Li_X)) {
     Seurat_list_Li_X[[i]] <- NormalizeData(Seurat_list_Li_X[[i]])

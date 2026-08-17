@@ -579,7 +579,12 @@ saveRDS(Seurat_list_Boroughs, file = .output_path(.current_dir, "PostQC_CellRang
 # rm(list = ls())
 .current_dir <- file.path(project_dir, "Resultados", "Boroughs_et_al", "RDS")
 Seurat_list_Boroughs <- readRDS(.input_path(.current_dir, "PostQC_CellRanger_Boroughs_RDS.rds"))
-load(.input_path(project_dir, "Codigo", "Gene_Markers_Info", "cycle.rda"))
+cycle_path <- file.path(project_dir, "Codigo", "Gene_Markers_Info", "cycle.rda")
+if (!file.exists(cycle_path)) {
+    cycle_path <- .input_path(project_dir, "Input", "cycle.rda")
+}
+
+load(cycle_path)
 
 for (i in seq_along(Seurat_list_Boroughs)) {
     Seurat_list_Boroughs[[i]] <- NormalizeData(Seurat_list_Boroughs[[i]])
