@@ -86,12 +86,27 @@ if (!nzchar(python_path) || !file.exists(python_path)) {
     )
 }
 
+.generated_input_paths <- c(
+    file.path(project_dir, "Resultados", "AUCell_CD8_IL10_NR", "auc_long_NR.RDS"),
+    file.path(project_dir, "Resultados", "AUCell_CD8_IL10_CR", "auc_long_CR.RDS")
+)
+
 .input_path <- function(directory, ...) {
     path <- file.path(directory, ...)
-    if (!file.exists(path) && !dir.exists(path)) {
-        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    if (file.exists(path) || dir.exists(path)) {
+        return(path)
     }
-    path
+    if (path %in% .generated_input_paths) {
+        input_path <- file.path(project_dir, "Input", basename(path))
+        if (file.exists(input_path)) {
+            return(input_path)
+        }
+        stop(
+            paste("Required generated input file does not exist. Checked:", paste(c(path, input_path), collapse = ", ")),
+            call. = FALSE
+        )
+    }
+    stop(paste("Required input path does not exist:", path), call. = FALSE)
 }
 .output_path <- function(directory, ...) {
     path <- file.path(directory, ...)

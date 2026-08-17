@@ -36,6 +36,13 @@ if not project_dir.is_dir():
         "Set --project-dir or CART_ATLAS_PROJECT_DIR."
     )
 
+_generated_input_paths = {
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "scVI" / "V4" / "Python_scVI_adata_V4_state3.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Subclustering_V4" / "Data" / "CD4" / "adata_CD4_manual_celltype_annotation_high.csv",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Subclustering_V4" / "Data" / "CD8" / "adata_CD8_manual_celltype_annotation_high.csv",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Subclustering_V4" / "Data" / "GATA3" / "adata_GATA3_manual_celltype_annotation_high.csv",
+}
+
 def _require_path(path):
     if not path.exists():
         raise FileNotFoundError(f"Required input path does not exist: {path}")
@@ -44,9 +51,17 @@ def _require_path(path):
 
 def _input_path(directory, filename):
     path = directory / filename
-    if not path.exists():
-        raise FileNotFoundError(f"Required input path does not exist: {path}")
-    return path
+    if path.exists():
+        return path
+    if path in _generated_input_paths:
+        input_path = project_dir / "Input" / path.name
+        if input_path.exists():
+            return input_path
+        raise FileNotFoundError(
+            "Required generated input file does not exist. Checked: "
+            + ", ".join(str(candidate) for candidate in (path, input_path))
+        )
+    raise FileNotFoundError(f"Required input path does not exist: {path}")
 
 
 def _output_path(directory, filename):

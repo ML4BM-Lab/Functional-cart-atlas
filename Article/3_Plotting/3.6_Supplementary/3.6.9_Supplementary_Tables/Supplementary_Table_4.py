@@ -35,11 +35,29 @@ if not project_dir.is_dir():
         "Set --project-dir or CART_ATLAS_PROJECT_DIR."
     )
 
+_generated_input_paths = {
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Merged_WO_integration" / "Sin_GT" / "Seurat_merged.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "scVI" / "Sin_GT_With_Python" / "Suplementaria_S2_scVI_state1.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Harmony" / "Sin_GT" / "Seurat_harmony.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "LIGER" / "Sin_GT" / "Seurat_liger.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "STACAS" / "Sin_GT" / "Seurat_STACAS_integ2.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Seurat_RPCA" / "Sin_GT" / "Seurat_RPCA_integ.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "fastMNN" / "Sin_GT" / "Seurat_fastMNN2.h5ad",
+}
+
 def _input_path(directory, filename):
     path = directory / filename
-    if not path.exists():
-        raise FileNotFoundError(f"Required input path does not exist: {path}")
-    return path
+    if path.exists():
+        return path
+    if path in _generated_input_paths:
+        input_path = project_dir / "Input" / path.name
+        if input_path.exists():
+            return input_path
+        raise FileNotFoundError(
+            "Required generated input file does not exist. Checked: "
+            + ", ".join(str(candidate) for candidate in (path, input_path))
+        )
+    raise FileNotFoundError(f"Required input path does not exist: {path}")
 
 
 def _output_path(directory, filename):

@@ -75,12 +75,26 @@ if (!dir.exists(project_dir)) {
     )
 }
 
+.generated_input_paths <- c(
+    file.path(project_dir, "Resultados", "Joined_datasets", "Dreamlet_to_ClusterProfiler", "dreamlet_DEG_IACs_Post_vs_Infusion.RDS")
+)
+
 .input_path <- function(directory, ...) {
     path <- file.path(directory, ...)
-    if (!file.exists(path) && !dir.exists(path)) {
-        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    if (file.exists(path) || dir.exists(path)) {
+        return(path)
     }
-    path
+    if (path %in% .generated_input_paths) {
+        input_path <- file.path(project_dir, "Input", basename(path))
+        if (file.exists(input_path)) {
+            return(input_path)
+        }
+        stop(
+            paste("Required generated input file does not exist. Checked:", paste(c(path, input_path), collapse = ", ")),
+            call. = FALSE
+        )
+    }
+    stop(paste("Required input path does not exist:", path), call. = FALSE)
 }
 .output_path <- function(directory, ...) {
     path <- file.path(directory, ...)

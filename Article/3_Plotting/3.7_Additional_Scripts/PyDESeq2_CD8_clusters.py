@@ -36,10 +36,24 @@ if not project_dir.is_dir():
         "Set --project-dir or CART_ATLAS_PROJECT_DIR."
     )
 
+_generated_input_paths = {
+    project_dir / "Resultados" / "CD8_clusters" / "genes_dreamlet_1.txt",
+    project_dir / "Resultados" / "CD8_clusters" / "genes_dreamlet_2.txt",
+    project_dir / "Resultados" / "CD8_clusters" / "genes_dreamlet_3.txt",
+}
+
 def _input_path(directory, filename):
     path = directory / filename
     if path.exists():
         return path
+    if path in _generated_input_paths:
+        input_path = project_dir / "Input" / path.name
+        if input_path.exists():
+            return input_path
+        raise FileNotFoundError(
+            "Required generated input file does not exist. Checked: "
+            + ", ".join(str(candidate) for candidate in (path, input_path))
+        )
     atlas_filenames = {
         "Python_scVI_adata_big_V4_state4.h5ad",
         "Python_scVI_adata_big_V4_state4_Normalized.h5ad",

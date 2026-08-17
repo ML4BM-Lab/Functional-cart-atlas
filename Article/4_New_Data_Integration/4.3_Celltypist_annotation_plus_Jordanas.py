@@ -45,17 +45,37 @@ models_dir = Path(
     or os.environ.get("CART_ATLAS_MODELS_DIR", project_dir / "Models" / "CellTypist")
 ).expanduser().resolve()
 
+_generated_input_paths = {
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5" / "Seurat_merged.h5ad",
+}
+
 def _require_path(path):
-    if not path.exists():
-        raise FileNotFoundError(f"Required input path does not exist: {path}")
-    return path
+    if path.exists():
+        return path
+    if path in _generated_input_paths:
+        input_path = project_dir / "Input" / path.name
+        if input_path.exists():
+            return input_path
+        raise FileNotFoundError(
+            "Required generated input file does not exist. Checked: "
+            + ", ".join(str(candidate) for candidate in (path, input_path))
+        )
+    raise FileNotFoundError(f"Required input path does not exist: {path}")
 
 
 def _input_path(directory, filename):
     path = directory / filename
-    if not path.exists():
-        raise FileNotFoundError(f"Required input path does not exist: {path}")
-    return path
+    if path.exists():
+        return path
+    if path in _generated_input_paths:
+        input_path = project_dir / "Input" / path.name
+        if input_path.exists():
+            return input_path
+        raise FileNotFoundError(
+            "Required generated input file does not exist. Checked: "
+            + ", ".join(str(candidate) for candidate in (path, input_path))
+        )
+    raise FileNotFoundError(f"Required input path does not exist: {path}")
 
 
 def _output_path(directory, filename):

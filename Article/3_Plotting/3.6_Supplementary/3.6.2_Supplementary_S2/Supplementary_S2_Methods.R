@@ -75,12 +75,32 @@ if (!dir.exists(project_dir)) {
     )
 }
 
+.generated_input_paths <- c(
+    file.path(project_dir, "Resultados", "Xhangolli_et_al", "RDS", "Normalized_CellRanger_Xhangolli_RDS.rds"),
+    file.path(project_dir, "Resultados", "Rodriguez-Marquez_et_al", "RDS", "Normalized_CellRanger_Rodrguez_Marquez_RDS.rds"),
+    file.path(project_dir, "Resultados", "Wang_et_al", "RDS", "Normalized_CellRanger_Wang_RDS.rds"),
+    file.path(project_dir, "Resultados", "Lynn_et_al", "RDS", "Normalized_CellRanger_Lynn_RDS.rds"),
+    file.path(project_dir, "Resultados", "Boroughs_et_al", "RDS", "Normalized_CellRanger_Boroughs_RDS.rds"),
+    file.path(project_dir, "Resultados", "Bai_et_al", "RDS", "Normalized_CellRanger_Bai_RDS.rds"),
+    file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "cell_annotation_manual.csv")
+)
+
 .input_path <- function(directory, ...) {
     path <- file.path(directory, ...)
-    if (!file.exists(path) && !dir.exists(path)) {
-        stop(paste("Required input path does not exist:", path), call. = FALSE)
+    if (file.exists(path) || dir.exists(path)) {
+        return(path)
     }
-    path
+    if (path %in% .generated_input_paths) {
+        input_path <- file.path(project_dir, "Input", basename(path))
+        if (file.exists(input_path)) {
+            return(input_path)
+        }
+        stop(
+            paste("Required generated input file does not exist. Checked:", paste(c(path, input_path), collapse = ", ")),
+            call. = FALSE
+        )
+    }
+    stop(paste("Required input path does not exist:", path), call. = FALSE)
 }
 .output_path <- function(directory, ...) {
     path <- file.path(directory, ...)
