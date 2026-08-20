@@ -1,7 +1,7 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Supplementary_Table_4.py
+# Program: Supplementary_Table_04.py
 # Author: Sergio Cámara Peña
 # Date: 09/06/2026
 # Version: FINAL

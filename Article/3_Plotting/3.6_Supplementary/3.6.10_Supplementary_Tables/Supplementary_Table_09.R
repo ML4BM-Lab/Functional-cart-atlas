@@ -1,9 +1,9 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Supplementary_Table_6.R
+# Program: Supplementary_Table_09.R
 # Author: Sergio Cámara Peña
-# Date: 04/06/2025
+# Date: 04/12/2024
 # Version: FINAL
 # Machine: Rocinante
 
@@ -87,8 +87,7 @@ if (!nzchar(python_path) || !file.exists(python_path)) {
 }
 
 .generated_input_paths <- c(
-    file.path(project_dir, "Resultados", "AUCell_CD8_IL10_NR", "auc_long_NR.RDS"),
-    file.path(project_dir, "Resultados", "AUCell_CD8_IL10_CR", "auc_long_CR.RDS")
+    file.path(project_dir, "Resultados", "CD8_Short_Anytime_CR", "Final_result_Fig_3H.csv")
 )
 
 .input_path <- function(directory, ...) {
@@ -128,9 +127,6 @@ library(EnrichmentBrowser)
 library(GSEABase)
 library(Cairo)
 library(SMFilter)
-library(scater)
-library(coin)
-library(see)
 
 library(reticulate)
 use_python(python_path)
@@ -139,70 +135,40 @@ anndata <- reticulate::import("anndata")
 .current_dir <- file.path(.article_dir, "3_Plotting", "Functions")
 source(.input_path(.current_dir, "add_NTotalGenes.R"))
 
-## Set random seed
 set.seed(2504)
 
-# Go to AUCell_CD8_IL10_CR.R and AUCell_CD8_IL10_NR.R if you want to change something of the code - In there you will find all additional graphics and tests.
+##### Read files #####
+.current_dir <- file.path(project_dir, "Resultados", "CD8_Short_Anytime_CR")
+Final_result <- read.csv(.input_path(.current_dir, "Final_result_Fig_3H.csv")) # This object is generated in Dreamlet_CD8_short_anytime_CR.R script
+Final_result
 
-.current_dir <- file.path(project_dir, "Resultados", "AUCell_CD8_IL10_NR")
-auc_long_NR <- readRDS(.input_path(.current_dir, "auc_long_NR.RDS"))
+library(dplyr)
 
-.current_dir <- file.path(project_dir, "Resultados", "AUCell_CD8_IL10_CR")
-auc_long_CR <- readRDS(.input_path(.current_dir, "auc_long_CR.RDS"))
+df <- Final_result
 
-# Add condition labels
-auc_long_NR$Group <- "NR"
-auc_long_CR$Group <- "CR"
-
-# Combine
-auc_combined <- rbind(auc_long_NR, auc_long_CR)
-
-## Wilcoxon additional test
-wilcoxon_results <- auc_combined %>%
-  group_by(Cell_Type) %>%
+results <- df %>%
+  group_by(Geneset) %>%
   summarise(
-    p_value = wilcox.test(AUC[Group == "NR"], AUC[Group == "CR"])$p.value,
-    NR_median = median(AUC[Group == "NR"]),
-    CR_median = median(AUC[Group == "CR"]),
-    N_NR = sum(Group == "NR"),
-    N_CR = sum(Group == "CR")
+    delta1 = dplyr::first(delta),
+    se1 = dplyr::first(se),
+    delta2 = dplyr::last(delta),
+    se2 = dplyr::last(se),
+    .groups = "drop"
   ) %>%
-  mutate(p_adj = p.adjust(p_value, method = "BH"))
-
-wilcoxon_results <- wilcoxon_results %>%
-  mutate(delta_median = NR_median - CR_median)
-
-print(wilcoxon_results)
-
-# Get asterisk significance
-get_significance <- function(p) {
-  if (p < 0.001) {
-    return("***")
-  } else if (p < 0.01) {
-    return("**")
-  } else if (p < 0.05) {
-    return("*")
-  } else {
-    return("ns")
-  }
-}
-
-# Add significance column
-wilcoxon_results <- wilcoxon_results %>%
-  mutate(Significance = sapply(p_adj, get_significance))
-
-# Print table
-wilcoxon_results %>%
-  dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance) %>%
-  print(n = Inf, width = Inf)
-
-if (FALSE) {
-  write.csv(
-    wilcoxon_results %>%
-      dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance),
-    file = .output_path(.current_dir, "Supplementary_Table_6.csv"),
-    row.names = FALSE
+  mutate(
+    Z = (delta1 - delta2) / sqrt(se1^2 + se2^2),
+    pval = 1 - pnorm(abs(Z)), # One-tail test
+    sig = case_when(
+      pval <= 0.001  ~ "***",
+      pval <= 0.01   ~ "**",
+      pval <= 0.05   ~ "*",
+      TRUE           ~ "ns"
+    )
   )
-}
 
-##################### END OF SCRIPT #####################
+results
+write.csv(results, .output_path(.current_dir, "Supplementary_Table_9.csv"))
+
+################################
+######## END OF SCRIPT #########
+################################

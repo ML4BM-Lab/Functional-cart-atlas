@@ -1,7 +1,7 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Supplementary_Table_3.py
+# Program: Supplementary_Table_03.py
 # Author: Sergio Cámara Peña
 # Date: 09/06/2025
 # Version: FINAL

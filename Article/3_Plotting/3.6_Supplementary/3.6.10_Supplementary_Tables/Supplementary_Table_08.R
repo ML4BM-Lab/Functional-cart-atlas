@@ -1,9 +1,9 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Supplementary_Table_7.R
+# Program: Supplementary_Table_08.R
 # Author: Sergio Cámara Peña
-# Date: 04/06/2025
+# Date: 04/12/2024
 # Version: FINAL
 # Machine: Rocinante
 
@@ -86,41 +86,25 @@ if (!nzchar(python_path) || !file.exists(python_path)) {
     )
 }
 
+.generated_input_paths <- c(
+    file.path(project_dir, "Resultados", "CD8_Short_Anytime_CR", "Final_result_Fig_3H.csv")
+)
+
 .input_path <- function(directory, ...) {
     path <- file.path(directory, ...)
     if (file.exists(path) || dir.exists(path)) {
         return(path)
     }
-
-    atlas_filenames <- c(
-        "Python_scVI_adata_big_V4_state4.h5ad",
-        "Python_scVI_adata_big_V4_state4_Normalized.h5ad",
-        "Atlas_integ_scArches_FINAL_V5.h5ad"
-    )
-    atlas_directories <- c(
-        file.path(project_dir, "Input"),
-        file.path(project_dir, "Resultados", "Joined_datasets", "Raw_Atlas")
-    )
-    if (basename(path) %in% atlas_filenames && directory %in% atlas_directories) {
-        alternate_paths <- file.path(
-            atlas_directories[atlas_directories != directory],
-            basename(path)
-        )
-        for (alternate_path in alternate_paths) {
-            if (file.exists(alternate_path)) {
-                return(alternate_path)
-            }
+    if (path %in% .generated_input_paths) {
+        input_path <- file.path(project_dir, "Input", basename(path))
+        if (file.exists(input_path)) {
+            return(input_path)
         }
-        checked_paths <- c(path, alternate_paths)
         stop(
-            paste(
-                "Required atlas input file does not exist. Checked:",
-                paste(checked_paths, collapse = ", ")
-            ),
+            paste("Required generated input file does not exist. Checked:", paste(c(path, input_path), collapse = ", ")),
             call. = FALSE
         )
     }
-
     stop(paste("Required input path does not exist:", path), call. = FALSE)
 }
 .output_path <- function(directory, ...) {
@@ -143,9 +127,6 @@ library(EnrichmentBrowser)
 library(GSEABase)
 library(Cairo)
 library(SMFilter)
-library(scater)
-library(coin)
-library(see)
 
 library(reticulate)
 use_python(python_path)
@@ -154,87 +135,11 @@ anndata <- reticulate::import("anndata")
 .current_dir <- file.path(.article_dir, "3_Plotting", "Functions")
 source(.input_path(.current_dir, "add_NTotalGenes.R"))
 
-## Set random seed
 set.seed(2504)
 
-##### Supplementary Table 7 #####
-## Read files
-path <- file.path(project_dir, "Input")
-file <- .input_path(path, "Python_scVI_adata_big_V4_state4.h5ad")
-adata <- anndata$read_h5ad(file)
+##### Read files #####
+.current_dir <- file.path(project_dir, "Resultados", "CD8_Short_Anytime_CR")
+Final_result <- read.csv(.input_path(.current_dir, "Final_result_Fig_3H.csv")) # This object is generated in Dreamlet_CD8_short_anytime_CR.R script
+Final_result
 
-sce <- AnnData2SCE(adata, "counts", uns = FALSE, obsm = FALSE, obsp = FALSE)
-sce
-assay(sce, "counts") %>% max()
-
-print((sce %>% dim())[2])
-
-## Filter object
-filtered_sce <- sce[, colData(sce)$Antigen == "Blood"]
-print((filtered_sce %>% dim())[2])
-
-filtered_sce <- filtered_sce[, colData(filtered_sce)$Time_Point_Ranges == "Infusion_Product"]
-print((filtered_sce %>% dim())[2])
-
-filtered_sce <- filtered_sce[, !((colData(filtered_sce)$Time_Point_Ranges == "Infusion_Product") & (colData(filtered_sce)$Stimulated == "YES"))]
-print((filtered_sce %>% dim())[2])
-
-filtered_sce <- filtered_sce[, colData(filtered_sce)$STATUS == "DISEASE"]
-print((filtered_sce %>% dim())[2])
-
-colData(filtered_sce)$Age_Range <- factor(colData(filtered_sce)$Age_Range, levels = c("<20", "20-40", "40-60", ">60"), ordered=TRUE)
-
-## Remove NAs to avoid any further problems
-table(filtered_sce$Anytime_CR, useNA = "ifany")
-filtered_sce <- filtered_sce[, !is.na(filtered_sce$Anytime_CR)]
-table(filtered_sce$Anytime_CR, useNA = "ifany")
-
-## Do these cells express more IL-10?
-# Get unique cell types
-perform_fisher_test <- function(cell_type) {
-  # Subset the data for the given cell type
-  cell_indices <- filtered_sce$manual_celltype_annotation_high == cell_type
-
-  # Create contingency table
-  contingency_table <- table(
-    IL10_expr = assay(filtered_sce, "counts")["IL10", cell_indices] > 0,
-    Response = filtered_sce$Max_Response[cell_indices]
-  )
-  
-  # Ensure both "CR" and "NR" exist in the table
-  expected_levels <- c("CR", "NR")
-  contingency_table <- contingency_table[, expected_levels, drop = FALSE]
-  
-  # Ensure the table is 2x2 (force missing rows/columns to be zero)
-  if (!all(c(TRUE, FALSE) %in% rownames(contingency_table))) {
-    full_table <- matrix(0, nrow = 2, ncol = 2,
-                         dimnames = list(c(FALSE, TRUE), expected_levels))
-    full_table[rownames(contingency_table), ] <- contingency_table
-    contingency_table <- full_table
-  }
-  
-  # Perform Fisher's test
-  test_result <- fisher.test(contingency_table)
-  
-  return(list(
-    cell_type = cell_type,
-    contingency_table = contingency_table,
-    p_value = test_result$p.value,
-    odds_ratio = test_result$estimate
-  ))
-}
-
-cell_types <- filtered_sce$manual_celltype_annotation_high %>% unique()
-
-# Apply function to all cell types
-fisher_results <- lapply(cell_types, perform_fisher_test)
-
-# Remove NULL results
-fisher_results <- fisher_results[!sapply(fisher_results, is.null)]
-
-# Print results
-fisher_results
-
-################################
-######## END OF SCRIPT #########
-################################
+##### END OF SCRIPT #####
