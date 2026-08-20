@@ -1,7 +1,7 @@
 ###############################################################################
 ###############################################################################
 
-# Program: Supplementary_Table_14.R
+# Program: Supplementary_Table_15.R
 # Author: Sergio Cámara Peña
 # Date: 04/12/2024
 # Version: FINAL
@@ -176,8 +176,8 @@ comparison <- Final_result_all %>%
   )
 
 comparison
-.current_dir <- file.path(project_dir, "Resultados_V5", "Supplementary_Table_14")
-write.csv(comparison, .output_path(.current_dir, "Supplementary_Table_14.csv"))
+.current_dir <- file.path(project_dir, "Resultados_V5", "Supplementary_Table_15")
+write.csv(comparison, .output_path(.current_dir, "Supplementary_Table_15.csv"))
 
 ################################
 ######## END OF SCRIPT #########

@@ -177,6 +177,7 @@ DIRECTORY_TREE = (
     "Resultados_V5/BCMA_vs_CD19_IP_All",
     "Resultados_V5/BCMA_vs_CD19_MID",
     "Resultados_V5/Supplementary_Table_14",
+    "Resultados_V5/Supplementary_Table_15",
     "Shiny_app",
     "Shiny_app/shinyAtlas",
     "UCSC_Browser",
