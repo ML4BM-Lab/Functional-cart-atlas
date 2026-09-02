@@ -225,6 +225,13 @@ marker_genes = {
     ]
 }
 
+# Show the union of all marker genes in every cell-type violin.
+all_marker_genes = list(dict.fromkeys(
+    gene
+    for genes in marker_genes.values()
+    for gene in genes
+))
+
 
 # %% Set path to save figs
 
@@ -236,28 +243,50 @@ output_dir = (
 
 # %% Create stacked violins
 
-group_order = [
-    "Atlas",
-    "Exact correct",
-    "Broad correct",
-    "Incorrect"
+base_group_order = [
+    "Exact correct"
 ]
 
-all_labels = adata_final.obs["manual_celltype_annotation_high"].astype(str)
-is_jordana = adata_final.obs_names.isin(common_cells)
+# Split the incorrect predictions by Jordana's broad annotation.  The short
+# labels are used only in the plot; the values on the right match
+# comparison["Jordanas_Broad"].
+incorrect_group_mapping = {
+    "CD8 cytotoxic": [
+        ("Incorrect_CD4", "CD4"),
+        ("Incorrect_Prolif", "Proliferative"),
+    ],
+    "CD4 central memory": [
+        ("Incorrect_CD8", "CD8"),
+        ("Incorrect_Prolif", "Proliferative"),
+    ],
+    "Proliferative T cells": [
+        ("Incorrect_CD8", "CD8"),
+        ("Incorrect_CD4", "CD4"),
+    ],
+}
 
-for celltype, markers in marker_genes.items():
-    atlas_cells = adata_final.obs_names[(~is_jordana) & (all_labels == celltype)]
+for celltype in marker_genes:
+    markers = all_marker_genes
     exact_cells = comparison.index[(comparison["scArches_Annotation"] == celltype) & (comparison["Agreement"] == "Exact correct")]
-    broad_cells = comparison.index[(comparison["scArches_Annotation"] == celltype) & (comparison["Agreement"] == "Broad correct")]
-    incorrect_cells = comparison.index[(comparison["scArches_Annotation"] == celltype) & (comparison["Agreement"] == "Incorrect")]
-    cells_to_plot = adata_final.obs_names.isin(atlas_cells) | adata_final.obs_names.isin(exact_cells) | adata_final.obs_names.isin(broad_cells) | adata_final.obs_names.isin(incorrect_cells)
+    incorrect_groups = incorrect_group_mapping[celltype]
+    group_order = base_group_order + [group_name for group_name, _ in incorrect_groups]
+    cells_to_plot = adata_final.obs_names.isin(exact_cells)
+    incorrect_subgroups = []
+    for group_name, jordana_broad in incorrect_groups:
+        subgroup_cells = comparison.index[
+            (comparison["scArches_Annotation"] == celltype)
+            & (comparison["Agreement"] == "Incorrect")
+            & (comparison["Jordanas_Broad"] == jordana_broad)
+        ]
+        incorrect_subgroups.append((group_name, subgroup_cells))
+        cells_to_plot |= adata_final.obs_names.isin(subgroup_cells)
     adata_plot = adata_final[cells_to_plot].copy()
-    adata_plot.obs["Comparison_group"] = "Incorrect"
-    adata_plot.obs.loc[adata_plot.obs_names.isin(atlas_cells), "Comparison_group"] = "Atlas"
-    adata_plot.obs.loc[adata_plot.obs_names.isin(exact_cells), "Comparison_group"] = "Exact correct"
-    adata_plot.obs.loc[adata_plot.obs_names.isin(broad_cells), "Comparison_group"] = "Broad correct"
-    adata_plot.obs.loc[adata_plot.obs_names.isin(incorrect_cells), "Comparison_group"] = "Incorrect"
+    adata_plot.obs["Comparison_group"] = "Exact correct"
+    for group_name, subgroup_cells in incorrect_subgroups:
+        adata_plot.obs.loc[
+            adata_plot.obs_names.isin(subgroup_cells),
+            "Comparison_group",
+        ] = group_name
     present_groups = [group for group in group_order if (adata_plot.obs["Comparison_group"] == group).any()]
     adata_plot.obs["Comparison_group"] = pd.Categorical(adata_plot.obs["Comparison_group"], categories=present_groups, ordered=True)
     missing_genes = [gene for gene in markers if gene not in adata_plot.var_names]
@@ -268,7 +297,7 @@ for celltype, markers in marker_genes.items():
     print(adata_plot.obs["Comparison_group"].value_counts(sort=False))
     plot = sc.pl.stacked_violin(adata_plot, var_names=markers, groupby="Comparison_group", categories_order=present_groups, use_raw=False, yticklabels=False, figsize=(8, 5), title=celltype, cmap="Reds", show=False, return_fig=True)
     safe_name = celltype.replace(" ", "_")
-    plot.savefig(_output_path(output_dir, f"S8_Stacked_violin_{safe_name}.pdf"))
+    plot.savefig(_output_path(output_dir, f"S8_Stacked_violin_{safe_name}_Expanded_Split.pdf"))
     plot.show()
 
 
