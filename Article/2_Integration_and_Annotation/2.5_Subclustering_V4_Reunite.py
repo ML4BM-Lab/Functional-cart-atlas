@@ -131,7 +131,7 @@ del metadata_bis['row_number']
 
 # %% Check everything is passed correctly 2
 Check_1 = metadata_bis
-Check_2 = merged_df.iloc[:, :39]
+Check_2 = merged_df.iloc[:, :metadata_bis.shape[1]]
 
 print(Check_2.equals(Check_1))
 
@@ -146,7 +146,7 @@ except AssertionError as e:
 
 # %% Check everything is passed correctly 3
 Check_3 = sc_Metadata_to_python_v33
-Check_4 = merged_df.iloc[:, [9] + list(range(39, merged_df.shape[1]))].drop_duplicates().reset_index(drop=True)
+Check_4 = merged_df.iloc[:, [metadata_bis.columns.get_loc("Product_norm")] + list(range(metadata_bis.shape[1], merged_df.shape[1]))].drop_duplicates().reset_index(drop=True)
 
 print(Check_4.equals(Check_3))
 

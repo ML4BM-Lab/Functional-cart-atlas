@@ -574,14 +574,15 @@ adata.obs['cluster_dummy6'] = adata.obs['leiden_Res_0.3'] == adata.obs['leiden_R
 adata.obs['cluster_dummy6'] = adata.obs['cluster_dummy6']*1
 sc.pl.umap(adata, color='cluster_dummy6', frameon=False)
 
-# %% Load state 2.8
+# %% Load state 2.5
 ########################################################################
 #
-# State 2.8 Load
-# 
-######################################################################## 
+# State 2.5 Load
+# The former state 2.8 was state 2.5 plus the manual_celltype_annotation_high_V3
+# column, which no step below uses. Read state 2.5 directly.
+########################################################################
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scVI' / 'V4')
-adata = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state2_8.h5ad"))
+adata = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state2_5.h5ad"))
 
 # %% Annotation 1 --- Version 4
 ########################################################################

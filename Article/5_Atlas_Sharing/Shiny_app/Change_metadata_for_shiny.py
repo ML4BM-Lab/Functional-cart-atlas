@@ -82,7 +82,7 @@ sc.pp.filter_genes(adata_V4, min_cells=20)
 
 # %% Remove extra columns
 cols_to_remove = ["Marked_cells", "barcode", "timepoint", "barcode_timepoint", "manual_celltype_annotation_high_V3", "manual_celltype_annotation_low", "pct_counts_in_top_20_genes", "total_counts_ribo", "log1p_total_counts_ribo", "pct_counts_ribo", "total_counts_hb", "log1p_total_counts_hb", "pct_counts_hb", "score_ery"]
-adata_V4.obs.drop(columns=cols_to_remove, inplace=True)
+adata_V4.obs.drop(columns=cols_to_remove, inplace=True, errors="ignore")
 
 keep_uns = ["log1p", "umap"]
 
