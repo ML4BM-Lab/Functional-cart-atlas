@@ -11,11 +11,11 @@
     },
     {
       "id": "marg-python",
-      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg@sha256:36bb2885c01f5dcf83be8c22b8f2bc657a4e6d092c85122bb6a78d6821a6ea81"
+      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg@sha256:e3db2cdd8650f23964c5b1af1c6bd29839e763617ad05845389d70c82f7e595d"
     },
     {
       "id": "marg-r",
-      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg@sha256:2548f9a0872d91808aa8badb0ad52b0564dd2095a6a7eb7bc99d8b8b7e7527cc"
+      "image": "ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg@sha256:3990c959c898bae0034e24ead0afffb5e3e3dde55a6c926fd1926377d82ea0fe"
     }
   ]
 }

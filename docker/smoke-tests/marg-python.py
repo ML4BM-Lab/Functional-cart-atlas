@@ -3,6 +3,8 @@
 
 import argparse
 import importlib.metadata
+import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -13,7 +15,9 @@ import celltypist
 import gseapy
 import invoke
 import milopy
+import milopy.core as milo
 import numpy as np
+import pandas as pd
 import plotnine
 import rich
 import scanpy as sc
@@ -90,8 +94,79 @@ product = torch.tensor([[1.0, 2.0]]) @ torch.tensor([[3.0], [4.0]])
 if product.item() != 11.0:
     raise RuntimeError("Unexpected PyTorch matrix product")
 
+# The original Margaret environment includes Intel TBB. Force Numba to use
+# that conditional backend in a fresh process so an unresolved libtbb cannot
+# be hidden by its normal OpenMP fallback.
+tbb_check = subprocess.run(
+    [
+        sys.executable,
+        "-c",
+        "import numba,numpy as np; from numba import njit,prange; "
+        "exec('@njit(parallel=True)\\ndef f(x):\\n s=0.0\\n for i in prange(x.size): s+=x[i]\\n return s',globals()); "
+        "assert f(np.arange(10000,dtype=float)) == 49995000.0; "
+        "assert numba.threading_layer() == 'tbb'",
+    ],
+    env={**os.environ, "NUMBA_THREADING_LAYER": "tbb"},
+    capture_output=True,
+    text=True,
+)
+if tbb_check.returncode != 0:
+    raise RuntimeError(
+        "Numba TBB backend failed:\n" + tbb_check.stdout + tbb_check.stderr
+    )
+
 edge_r_version = str(r('as.character(utils::packageVersion("edgeR"))')[0])
+statmod_version = str(r('as.character(utils::packageVersion("statmod"))')[0])
 r('stopifnot(sum(edgeR::cpm(matrix(c(1L, 2L, 3L, 4L), nrow=2L))) > 0)')
+
+# Milo always requests edgeR's robust quasi-likelihood fit. statmod is a
+# conditional limma dependency on this path, so imports and basic CPM checks
+# cannot detect its absence. Exercise the complete neighbourhood DA route.
+rng = np.random.default_rng(2504)
+n_samples = 12
+cells_per_sample = 20
+samples = np.repeat(
+    [f"sample_{index:02d}" for index in range(n_samples)],
+    cells_per_sample,
+)
+conditions = np.repeat(["control"] * 6 + ["treated"] * 6, cells_per_sample)
+milo_counts = rng.negative_binomial(
+    12,
+    0.55,
+    size=(n_samples * cells_per_sample, 80),
+).astype(np.float32)
+milo_counts[conditions == "treated", :8] += rng.poisson(
+    3,
+    size=((conditions == "treated").sum(), 8),
+)
+milo_data = anndata.AnnData(
+    X=milo_counts,
+    obs=pd.DataFrame(
+        {
+            "sample": pd.Categorical(samples),
+            "condition": pd.Categorical(
+                conditions,
+                categories=["control", "treated"],
+            ),
+        },
+        index=[f"cell_{index:03d}" for index in range(len(samples))],
+    ),
+)
+sc.pp.normalize_total(milo_data, target_sum=10_000)
+sc.pp.log1p(milo_data)
+sc.pp.pca(milo_data, n_comps=20)
+sc.pp.neighbors(milo_data, n_neighbors=15, n_pcs=20)
+milo.make_nhoods(milo_data, prop=0.2)
+milo.count_nhoods(milo_data, sample_col="sample")
+milo.DA_nhoods(milo_data, design="~condition")
+milo_results = milo_data.uns["nhood_adata"].obs
+required_milo_columns = {"logFC", "PValue", "FDR", "SpatialFDR"}
+missing_milo_columns = required_milo_columns.difference(milo_results.columns)
+if milo_results.empty or missing_milo_columns:
+    raise RuntimeError(
+        "Invalid Milo DA result; missing columns: "
+        f"{sorted(missing_milo_columns)}"
+    )
 
 with tempfile.TemporaryDirectory() as directory:
     roundtrip_path = Path(directory) / "marg-python-smoke.h5ad"
@@ -111,6 +186,9 @@ print(
     f"scArches={package_version('scArches')}",
     f"scib-metrics={package_version('scib-metrics')}",
     f"scikit-misc={package_version('scikit-misc')}",
+    f"tbb={package_version('tbb')}",
     f"edgeR={edge_r_version}",
+    f"statmod={statmod_version}",
+    f"milo_nhoods={milo_results.shape[0]}",
     f"demo_shape={demo_shape}",
 )

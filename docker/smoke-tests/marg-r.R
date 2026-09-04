@@ -55,6 +55,7 @@ packages <- c(
   "scater",
   "scattermore",
   "sceasy",
+  "statmod",
   "tidyr",
   "tidyverse",
   "zellkonverter"
@@ -123,7 +124,19 @@ if (!all(is.finite(dge$samples$norm.factors))) {
   stop("edgeR returned invalid normalization factors", call. = FALSE)
 }
 
-anndata <- reticulate::import("anndata", convert = FALSE)
+# edgeR's robust quasi-likelihood fit reaches limma::fitFDistRobustly(),
+# which loads statmod conditionally rather than through mandatory metadata.
+group <- factor(rep(c("control", "treated"), each = 15L))
+design <- stats::model.matrix(~group)
+dge <- edgeR::estimateDisp(dge, design)
+robust_fit <- edgeR::glmQLFit(dge, design, robust = TRUE)
+robust_test <- edgeR::glmQLFTest(robust_fit, coef = 2L)
+robust_table <- edgeR::topTags(robust_test, n = Inf)$table
+if (nrow(robust_table) != nrow(counts) || any(!is.finite(robust_table$PValue))) {
+  stop("edgeR robust quasi-likelihood path returned invalid results", call. = FALSE)
+}
+
+anndata <- reticulate::import("anndata")
 python_version <- reticulate::py_eval(
   "__import__('platform').python_version()",
   convert = TRUE
@@ -135,10 +148,25 @@ if (!identical(python_version, expected_python)) {
   )
 }
 demo <- anndata$read_h5ad(demo_path, backed = "r")
-demo_shape <- as.integer(unlist(reticulate::py_to_r(demo$shape), use.names = FALSE))
+demo_shape_value <- demo$shape
+if (inherits(demo_shape_value, "python.builtin.object")) {
+  demo_shape_value <- reticulate::py_to_r(demo_shape_value)
+}
+demo_shape <- as.integer(unlist(demo_shape_value, use.names = FALSE))
 invisible(demo$file$close())
 if (length(demo_shape) != 2L || any(demo_shape == 0L)) {
   stop("Atlas_DEMO.h5ad is empty or has an invalid shape", call. = FALSE)
+}
+demo_memory <- anndata$read_h5ad(demo_path)
+demo_sce <- zellkonverter::AnnData2SCE(
+  demo_memory,
+  "counts",
+  uns = FALSE,
+  obsm = FALSE,
+  obsp = FALSE
+)
+if (!identical(rev(dim(demo_sce)), demo_shape)) {
+  stop("AnnData2SCE changed the demo matrix shape", call. = FALSE)
 }
 
 versions <- vapply(

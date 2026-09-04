@@ -7,16 +7,17 @@ scripts under `Article/`.
 |---|---|---|---:|
 | `functional-cart-atlas-python-roci:0.2.0` | Python 3.8.10 | — | 1,043,280,309 bytes |
 | `functional-cart-atlas-r-roci:0.2.0` | R 4.5.1 / Bioconductor 3.21 | Python 3.12.3 | 3,583,575,391 bytes |
-| `functional-cart-atlas-python-marg:0.2.0` | Python 3.8.10 | R 4.1.3 for rpy2/edgeR | 6,577,596,013 bytes |
-| `functional-cart-atlas-r-marg:0.2.0` | R 4.1.3 / Bioconductor 3.14 | Python 3.8.10 | 3,208,374,062 bytes |
+| `functional-cart-atlas-python-marg:0.2.1` | Python 3.8.10 | R 4.1.3 for rpy2/edgeR | 6,592,906,245 bytes |
+| `functional-cart-atlas-r-marg:0.2.1` | R 4.1.3 / Bioconductor 3.14 | Python 3.8.10 | 3,208,869,697 bytes |
 
 `roci` and `marg` identify the original Rocinante and Margaret workstation
 environments. The image tags are independent of the machine on which they are
 run.
 
-The `0.2.0` images include additional dependencies required by the
+The current `0.2.x` images include additional dependencies required by the
 machine-specific analysis scripts and identified during complete dependency
-audits.
+audits. Margaret `0.2.1` restores conditional statistical and parallel-runtime
+dependencies found during an additional runtime audit.
 
 ## Files required to build
 
@@ -46,9 +47,9 @@ docker --context rootless pull \
 docker --context rootless pull \
   ghcr.io/ml4bm-lab/functional-cart-atlas-r-roci:0.2.0
 docker --context rootless pull \
-  ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.0
+  ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.1
 docker --context rootless pull \
-  ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg:0.2.0
+  ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg:0.2.1
 ```
 
 The examples below use the short local tags produced by the build commands.
@@ -73,12 +74,12 @@ docker --context rootless build --platform linux/amd64 \
 
 docker --context rootless build --platform linux/amd64 \
   --file docker/marg/Dockerfile.python \
-  --tag functional-cart-atlas-python-marg:0.2.0 \
+  --tag functional-cart-atlas-python-marg:0.2.1 \
   .
 
 docker --context rootless build --platform linux/amd64 \
   --file docker/marg/Dockerfile.r \
-  --tag functional-cart-atlas-r-marg:0.2.0 \
+  --tag functional-cart-atlas-r-marg:0.2.1 \
   .
 ```
 
@@ -97,7 +98,7 @@ ATLAS=/path/on/the/host/Atlas
 docker --context rootless run --rm -it \
   --mount type=bind,source="$ATLAS",target="$ATLAS" \
   --workdir "$ATLAS" \
-  functional-cart-atlas-python-marg:0.2.0 \
+  functional-cart-atlas-python-marg:0.2.1 \
   bash
 ```
 
@@ -110,11 +111,11 @@ Initial runtime checks:
 docker --context rootless run --rm \
   functional-cart-atlas-python-roci:0.2.0 python3 --version
 docker --context rootless run --rm \
-  functional-cart-atlas-python-marg:0.2.0 python3 --version
+  functional-cart-atlas-python-marg:0.2.1 python3 --version
 docker --context rootless run --rm \
   functional-cart-atlas-r-roci:0.2.0 R --version
 docker --context rootless run --rm \
-  functional-cart-atlas-r-marg:0.2.0 R --version
+  functional-cart-atlas-r-marg:0.2.1 R --version
 ```
 
 ## Local smoke tests
@@ -135,12 +136,12 @@ docker --context rootless run --rm \
 
 docker --context rootless run --rm \
   --mount type=bind,source="$PWD",target=/repo,readonly \
-  functional-cart-atlas-python-marg:0.2.0 \
+  functional-cart-atlas-python-marg:0.2.1 \
   python3 /repo/docker/smoke-tests/marg-python.py /repo/Atlas_DEMO.h5ad
 
 docker --context rootless run --rm \
   --mount type=bind,source="$PWD",target=/repo,readonly \
-  functional-cart-atlas-r-marg:0.2.0 \
+  functional-cart-atlas-r-marg:0.2.1 \
   Rscript /repo/docker/smoke-tests/marg-r.R /repo/Atlas_DEMO.h5ad
 ```
 
@@ -153,14 +154,14 @@ R/Python bridge, synthetic operation or demo-file read fails. Omit
 For a one-off transfer, save and compress an image:
 
 ```bash
-docker --context rootless save functional-cart-atlas-python-marg:0.2.0 \
-  | zstd -T0 -3 -o functional-cart-atlas-python-marg-0.2.0.tar.zst
+docker --context rootless save functional-cart-atlas-python-marg:0.2.1 \
+  | zstd -T0 -3 -o functional-cart-atlas-python-marg-0.2.1.tar.zst
 ```
 
 After transferring the file, load it into the intended Docker daemon:
 
 ```bash
-zstd -dc functional-cart-atlas-python-marg-0.2.0.tar.zst \
+zstd -dc functional-cart-atlas-python-marg-0.2.1.tar.zst \
   | docker load
 ```
 
@@ -174,10 +175,10 @@ uses a personal rootless daemon.
 - Rocinante R: 313 exact R packages; all 27 marked R scripts parsed and their
   principal Bioconductor, enrichment/JSON, plotting and reticulate/anndata
   paths passed.
-- Margaret Python: 134 exact distributions; all 37 marked Python scripts parsed
-  and Scanpy Seurat-v3 HVG, scIB, BBKNN, PyTorch, scVI/scArches, H5AD and
-  rpy2/edgeR paths passed.
-- Margaret R: 313 exact R packages and 12 Python bridge distributions; all 23
+- Margaret Python: 135 exact distributions; all 40 marked Python scripts parsed
+  and Scanpy Seurat-v3 HVG, scIB, BBKNN, PyTorch, scVI/scArches, Milo/edgeR,
+  TBB, H5AD and rpy2 paths passed.
+- Margaret R: 314 exact R packages and 12 Python bridge distributions; all 23
   marked R scripts parsed and Seurat, SeuratDisk, FastMNN, scater,
   DropletUtils, edgeR, enrichment/JSON, raster graphics and
   reticulate/anndata paths passed.

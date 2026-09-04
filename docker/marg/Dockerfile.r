@@ -93,7 +93,7 @@ FROM rocker/r-ver:4.1.3 AS r-runtime
 
 LABEL org.opencontainers.image.title="Functional CAR-T Atlas - R (marg)" \
       org.opencontainers.image.description="R runtime for Functional CAR-T Atlas scripts executed on Margaret" \
-      org.opencontainers.image.version="0.2.0"
+      org.opencontainers.image.version="0.2.1"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     RENV_CONFIG_AUTOLOADER_ENABLED=FALSE \
@@ -172,7 +172,7 @@ LABEL org.opencontainers.image.authors="Carl Boettiger <cboettig@ropensci.org>" 
       org.opencontainers.image.vendor="Rocker Project" \
       org.opencontainers.image.title="Functional CAR-T Atlas - R (marg)" \
       org.opencontainers.image.description="R runtime for Functional CAR-T Atlas scripts executed on Margaret" \
-      org.opencontainers.image.version="0.2.0"
+      org.opencontainers.image.version="0.2.1"
 
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     R_VERSION=4.1.3 \

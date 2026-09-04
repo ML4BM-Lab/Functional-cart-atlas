@@ -94,8 +94,8 @@ table below.
 |-------------|---------|--------------|
 | Rocinante | Python 3.8.10 | `ghcr.io/ml4bm-lab/functional-cart-atlas-python-roci:0.2.0` |
 | Rocinante | R 4.5.1 | `ghcr.io/ml4bm-lab/functional-cart-atlas-r-roci:0.2.0` |
-| Margaret | Python 3.8.10 | `ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.0` |
-| Margaret | R 4.1.3 | `ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg:0.2.0` |
+| Margaret | Python 3.8.10 | `ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.1` |
+| Margaret | R 4.1.3 | `ghcr.io/ml4bm-lab/functional-cart-atlas-r-marg:0.2.1` |
 
 As a minimal example, the Margaret Python image can be downloaded and opened
 with the local repository mounted as follows:
@@ -103,12 +103,12 @@ with the local repository mounted as follows:
 ```bash
 ATLAS=/absolute/path/to/Functional-cart-atlas
 
-docker pull ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.0
+docker pull ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.1
 
 docker run --rm -it \
   --mount type=bind,source="$ATLAS",target="$ATLAS" \
   --workdir "$ATLAS" \
-  ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.0 \
+  ghcr.io/ml4bm-lab/functional-cart-atlas-python-marg:0.2.1 \
   bash
 ```
 

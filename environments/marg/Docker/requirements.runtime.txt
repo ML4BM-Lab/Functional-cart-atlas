@@ -122,6 +122,7 @@ soupsieve==2.3.2.post1
 statsmodels==0.14.1
 stdlib-list==0.8.0
 sympy==1.12
+tbb==2021.10.0
 tensorstore==0.1.38
 texttable==1.6.4
 threadpoolctl==3.1.0

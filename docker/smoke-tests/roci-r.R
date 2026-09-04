@@ -38,6 +38,7 @@ packages <- c(
   "scater",
   "scattermore",
   "see",
+  "statmod",
   "tidyverse",
   "variancePartition",
   "zellkonverter",
@@ -71,7 +72,25 @@ if (!all(is.finite(dge$samples$norm.factors))) {
   stop("edgeR returned invalid normalization factors", call. = FALSE)
 }
 
-anndata <- reticulate::import("anndata", convert = FALSE)
+set.seed(2504L)
+da_counts <- matrix(
+  stats::rpois(50L * 12L, lambda = 8),
+  nrow = 50L,
+  dimnames = list(paste0("gene", 1:50), paste0("sample", 1:12))
+)
+group <- factor(rep(c("control", "treated"), each = 6L))
+design <- stats::model.matrix(~group)
+da_dge <- edgeR::DGEList(counts = da_counts)
+da_dge <- edgeR::calcNormFactors(da_dge)
+da_dge <- edgeR::estimateDisp(da_dge, design)
+robust_fit <- edgeR::glmQLFit(da_dge, design, robust = TRUE)
+robust_test <- edgeR::glmQLFTest(robust_fit, coef = 2L)
+robust_table <- edgeR::topTags(robust_test, n = Inf)$table
+if (nrow(robust_table) != nrow(da_counts) || any(!is.finite(robust_table$PValue))) {
+  stop("edgeR robust quasi-likelihood path returned invalid results", call. = FALSE)
+}
+
+anndata <- reticulate::import("anndata")
 python_version <- reticulate::py_eval(
   "__import__('platform').python_version()",
   convert = TRUE
@@ -83,10 +102,25 @@ if (!identical(python_version, expected_python)) {
   )
 }
 demo <- anndata$read_h5ad(demo_path, backed = "r")
-demo_shape <- as.integer(unlist(reticulate::py_to_r(demo$shape), use.names = FALSE))
+demo_shape_value <- demo$shape
+if (inherits(demo_shape_value, "python.builtin.object")) {
+  demo_shape_value <- reticulate::py_to_r(demo_shape_value)
+}
+demo_shape <- as.integer(unlist(demo_shape_value, use.names = FALSE))
 invisible(demo$file$close())
 if (length(demo_shape) != 2L || any(demo_shape == 0L)) {
   stop("Atlas_DEMO.h5ad is empty or has an invalid shape", call. = FALSE)
+}
+demo_memory <- anndata$read_h5ad(demo_path)
+demo_sce <- zellkonverter::AnnData2SCE(
+  demo_memory,
+  "counts",
+  uns = FALSE,
+  obsm = FALSE,
+  obsp = FALSE
+)
+if (!identical(rev(dim(demo_sce)), demo_shape)) {
+  stop("AnnData2SCE changed the demo matrix shape", call. = FALSE)
 }
 
 versions <- vapply(
