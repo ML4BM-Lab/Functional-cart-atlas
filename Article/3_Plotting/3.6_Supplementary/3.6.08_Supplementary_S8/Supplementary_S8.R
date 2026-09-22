@@ -87,7 +87,7 @@ if (!nzchar(python_path) || !file.exists(python_path)) {
 }
 
 .generated_input_paths <- c(
-    file.path(project_dir, "Resultados_V5", "BCMA_vs_CD19_MID", "Resultados_V5_BCMA_vs_CD19_MID.RDS")
+    file.path(project_dir, "Para_Cluster_Profiler", "Resultados_V5_BCMA_vs_CD19_MID.RDS")
 )
 
 .input_path <- function(directory, ...) {
@@ -185,7 +185,7 @@ assay(sce, "counts") %>% max()
 
 print((sce %>% dim())[2])
 
-.current_dir <- file.path(project_dir, "Resultados", "Joined_datasets", "Dreamlet_to_ClusterProfiler")
+.current_dir <- file.path(project_dir, "Para_Cluster_Profiler")
 res_all <- readRDS(.input_path(.current_dir, "Resultados_V5_BCMA_vs_CD19_MID.RDS")) # Generated in Dreamlet_V5_BCMA_vs_CD19_MID.R
 
 ############################################################################################################################################################################################################

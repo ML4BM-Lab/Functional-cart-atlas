@@ -37,7 +37,7 @@ if not project_dir.is_dir():
 
 _generated_input_paths = {
     project_dir / "Resultados" / "Joined_datasets" / "Raw_Atlas" / "Python_scVI_adata_big_V4_state4.h5ad",
-    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5" / "Seurat_merged_With_Celltypist.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5" / "Seurat_merged_With_Celltypist_V5.h5ad",
 }
 
 def _require_path(path):
@@ -90,7 +90,7 @@ adata_Reference = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_big_
 
 # Load Jordanas (Query)
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V5')
-adata_V5 = sc.read_h5ad(_input_path(_current_dir, "Seurat_merged_With_Celltypist.h5ad"))
+adata_V5 = sc.read_h5ad(_input_path(_current_dir, "Seurat_merged_With_Celltypist_V5.h5ad"))
 adata_Query = adata_V5.copy()
 adata_Query = adata_Query[adata_Query.obs["orig.ident"] == "Jordana_et_al"]
 
@@ -153,7 +153,7 @@ if Train:
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Train:
-    vae.save("Atlas_integ_scArches_Reference_V5", overwrite=True, save_anndata=True)
+    vae.save(_output_path(_current_dir, "Atlas_integ_scArches_Reference_V5"), overwrite=True, save_anndata=True)
     print("Saved successfully")
 else:
     vae = sca.models.SCVI.load(_input_path(_current_dir, "Atlas_integ_scArches_Reference_V5"))
@@ -175,7 +175,7 @@ if Train:
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
 
 if Train:
-    scanvae.save("Atlas_integ_scArches_Reference_V5_scanvae", overwrite=True, save_anndata=True)
+    scanvae.save(_output_path(_current_dir, "Atlas_integ_scArches_Reference_V5_scanvae"), overwrite=True, save_anndata=True)
     print("Saved successfully")
 else:
     scanvae = sca.models.SCANVI.load(_input_path(_current_dir, "Atlas_integ_scArches_Reference_V5_scanvae"))
@@ -250,7 +250,7 @@ if Train_2:
 if Train_2:
     model = sca.models.SCANVI.load_query_data(
         adata_Query.copy(),
-        reference_model="Atlas_integ_scArches_Reference_V5_scanvae",
+        reference_model=_input_path(_current_dir, "Atlas_integ_scArches_Reference_V5_scanvae"),
         freeze_dropout = True,
     )
     model._unlabeled_indices = np.arange(adata_Query.n_obs)
@@ -436,7 +436,7 @@ adata_Reference = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_big_
 
 # Load Jordanas (Query)
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V5')
-adata_V5 = sc.read_h5ad(_input_path(_current_dir, "Seurat_merged_With_Celltypist.h5ad"))
+adata_V5 = sc.read_h5ad(_input_path(_current_dir, "Seurat_merged_With_Celltypist_V5.h5ad"))
 adata_Query = adata_V5.copy()
 adata_Query = adata_Query[adata_Query.obs["orig.ident"] == "Jordana_et_al"]
 
@@ -478,13 +478,12 @@ adata_big_2.obs = merged_df.copy()
 # FINAL object Load/Save
 # 
 ######################################################################## 
-_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'scArches' / 'V5')
+_current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas')
 
 if Save_h5ad_4:
     adata_big_2.raw = None
     ##### Changes in metadata to up-to-date to latest version #####
     ## Load CSV with changes
-    _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Raw_Atlas')
     time_point_changes = pd.read_csv(_input_path(_current_dir, "Time_Point_Changes_V5.csv"), sep=";", index_col="Norm_Sample_Name")
     # Join directly to update Time_Point and Time_Point_Ranges
     adata_big_2.obs = adata_big_2.obs.drop(columns=["Time_Point", "Time_Point_Ranges"], errors="ignore")

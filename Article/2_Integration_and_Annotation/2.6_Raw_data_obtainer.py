@@ -37,7 +37,7 @@ if not project_dir.is_dir():
 
 _generated_input_paths = {
     project_dir / "Resultados" / "Joined_datasets" / "Integration" / "scVI" / "V4" / "Python_scVI_adata_V4_state4.h5ad",
-    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V4" / "Seurat_merged_With_Celltypist.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V4" / "Seurat_merged_With_Celltypist_V4.h5ad",
 }
 
 def _require_path(path):
@@ -78,7 +78,7 @@ _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integratio
 adata_small_V4 = sc.read_h5ad(_input_path(_current_dir, "Python_scVI_adata_V4_state4.h5ad"))
 
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4')
-adata_V4 = sc.read_h5ad(_input_path(_current_dir, "Seurat_merged_With_Celltypist.h5ad"))
+adata_V4 = sc.read_h5ad(_input_path(_current_dir, "Seurat_merged_With_Celltypist_V4.h5ad"))
 
 # %% Remove irrelevant cells from original object
 if Guardar:

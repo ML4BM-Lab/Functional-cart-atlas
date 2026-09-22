@@ -37,7 +37,7 @@ if not project_dir.is_dir():
     )
 
 _generated_input_paths = {
-    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V4" / "Seurat_merged_With_Celltypist.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V4" / "Seurat_merged_With_Celltypist_V4.h5ad",
 }
 
 def _require_path(path):
@@ -109,7 +109,7 @@ random.seed(2504)
 # %% Read the data
 if Train:
     adata = sc.read(
-        _require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4' / 'Seurat_merged_With_Celltypist.h5ad')
+        _require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4' / 'Seurat_merged_With_Celltypist_V4.h5ad')
     )
 
 # %% Create a layer with the counts - Is what scVI uses

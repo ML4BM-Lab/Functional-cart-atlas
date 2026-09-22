@@ -36,7 +36,7 @@ if not project_dir.is_dir():
     )
 
 _generated_input_paths = {
-    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5" / "Seurat_merged_With_Celltypist.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5" / "Seurat_merged_With_Celltypist_V5.h5ad",
     project_dir / "Resultados" / "Joined_datasets" / "Raw_Atlas" / "Atlas_integ_scArches_FINAL_V5.h5ad",
 }
 
@@ -69,7 +69,7 @@ import numpy as np
 jordana_dir = project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5"
 
 adata_Jordana = sc.read_h5ad(
-    _input_path(jordana_dir, "Seurat_merged_With_Celltypist.h5ad")
+    _input_path(jordana_dir, "Seurat_merged_With_Celltypist_V5.h5ad")
 )
 
 adata_Jordana = adata_Jordana[
@@ -243,33 +243,36 @@ output_dir = (
 
 # %% Create stacked violins
 
-base_group_order = [
-    "Exact correct"
-]
+exact_group_mapping = {
+    "CD8 cytotoxic": "Classified CD8",
+    "CD4 central memory": "Classified CD4",
+    "Proliferative T cells": "Classified Prolif",
+}
 
 # Split the incorrect predictions by Jordana's broad annotation.  The short
 # labels are used only in the plot; the values on the right match
 # comparison["Jordanas_Broad"].
 incorrect_group_mapping = {
     "CD8 cytotoxic": [
-        ("Incorrect_CD4", "CD4"),
-        ("Incorrect_Prolif", "Proliferative"),
+        ("Classified CD4", "CD4"),
+        ("Classified Prolif", "Proliferative"),
     ],
     "CD4 central memory": [
-        ("Incorrect_CD8", "CD8"),
-        ("Incorrect_Prolif", "Proliferative"),
+        ("Classified CD8", "CD8"),
+        ("Classified Prolif", "Proliferative"),
     ],
     "Proliferative T cells": [
-        ("Incorrect_CD8", "CD8"),
-        ("Incorrect_CD4", "CD4"),
+        ("Classified CD8", "CD8"),
+        ("Classified CD4", "CD4"),
     ],
 }
 
 for celltype in marker_genes:
     markers = all_marker_genes
     exact_cells = comparison.index[(comparison["scArches_Annotation"] == celltype) & (comparison["Agreement"] == "Exact correct")]
+    exact_group = exact_group_mapping[celltype]
     incorrect_groups = incorrect_group_mapping[celltype]
-    group_order = base_group_order + [group_name for group_name, _ in incorrect_groups]
+    group_order = [exact_group] + [group_name for group_name, _ in incorrect_groups]
     cells_to_plot = adata_final.obs_names.isin(exact_cells)
     incorrect_subgroups = []
     for group_name, jordana_broad in incorrect_groups:
@@ -281,7 +284,7 @@ for celltype in marker_genes:
         incorrect_subgroups.append((group_name, subgroup_cells))
         cells_to_plot |= adata_final.obs_names.isin(subgroup_cells)
     adata_plot = adata_final[cells_to_plot].copy()
-    adata_plot.obs["Comparison_group"] = "Exact correct"
+    adata_plot.obs["Comparison_group"] = exact_group
     for group_name, subgroup_cells in incorrect_subgroups:
         adata_plot.obs.loc[
             adata_plot.obs_names.isin(subgroup_cells),

@@ -46,7 +46,7 @@ models_dir = Path(
 ).expanduser().resolve()
 
 _generated_input_paths = {
-    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V4" / "Seurat_merged.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V4" / "Seurat_merged_V4.h5ad",
 }
 
 def _require_path(path):
@@ -102,7 +102,7 @@ model_to_use = models.Model.load(model=str(_input_path(models_dir, "Immune_All_L
 ####################################################################################################################
 
 # %% Select (.csv) file on where to do the predictions
-dir_merged = _require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4' / 'Seurat_merged.h5ad')
+dir_merged = _require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4' / 'Seurat_merged_V4.h5ad')
 adata_Seurat_merged = sc.read(dir_merged)
 sc.pp.normalize_per_cell(adata_Seurat_merged, counts_per_cell_after=10000)
 sc.pp.log1p(adata_Seurat_merged)
@@ -121,6 +121,6 @@ adata = predictions_merged.to_adata()
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4')
 
 # Save metadata table to a file
-adata.obs.to_csv(_output_path(_current_dir, "celltypist_metadata_table.csv"), sep=",", index=True, header=True)
+adata.obs.to_csv(_output_path(_current_dir, "celltypist_metadata_table_V4.csv"), sep=",", index=True, header=True)
 
 # %% End of script

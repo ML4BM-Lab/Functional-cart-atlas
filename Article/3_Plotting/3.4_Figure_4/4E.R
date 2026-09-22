@@ -76,7 +76,7 @@ if (!dir.exists(project_dir)) {
 }
 
 .generated_input_paths <- c(
-    file.path(project_dir, "Resultados", "Joined_datasets", "Dreamlet_to_ClusterProfiler", "dreamlet_DEG_IACs_Post_vs_Infusion.RDS")
+    file.path(project_dir, "Para_Cluster_Profiler", "dreamlet_DEG_IACs_Post_vs_Infusion.RDS")
 )
 
 .input_path <- function(directory, ...) {
@@ -113,7 +113,7 @@ library(enrichplot)
 set.seed(2504)
 
 ##### Load data #####
-.current_dir <- file.path(project_dir, "Resultados", "Joined_datasets", "Dreamlet_to_ClusterProfiler")
+.current_dir <- file.path(project_dir, "Para_Cluster_Profiler")
 res_all <- readRDS(.input_path(.current_dir, "dreamlet_DEG_IACs_Post_vs_Infusion.RDS")) # This object comes from Dreamlet_IACs_clusters.R script
 res_all %>% head()
 

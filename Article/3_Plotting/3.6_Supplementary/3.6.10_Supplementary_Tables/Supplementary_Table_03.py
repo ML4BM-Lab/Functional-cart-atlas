@@ -36,7 +36,7 @@ if not project_dir.is_dir():
     )
 
 _generated_input_paths = {
-    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Merged_WO_integration" / "Sin_GT" / "Seurat_merged.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Merged_WO_integration" / "Sin_GT" / "Seurat_merged_Integration_Methods.h5ad",
     project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "scVI" / "Sin_GT_With_Python" / "Suplementaria_S2_scVI_state1.h5ad",
     project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Harmony" / "Sin_GT" / "Seurat_harmony.h5ad",
     project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "LIGER" / "Sin_GT" / "Seurat_liger.h5ad",
@@ -101,7 +101,7 @@ results_dir = project_dir / 'Resultados' / 'Joined_datasets' / 'Integration_meth
 # %% Merged
 # Initialize the graph analyzer
 scgraph_merged = scGraph(
-    adata_path=_require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration_methods_lab' / 'Merged_WO_integration' / 'Sin_GT' / 'Seurat_merged.h5ad'),   # Path to AnnData object
+    adata_path=_require_path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration_methods_lab' / 'Merged_WO_integration' / 'Sin_GT' / 'Seurat_merged_Integration_Methods.h5ad'),   # Path to AnnData object
     batch_key="Product_norm",                     # Column name for batch information
     label_key="manual_celltype_annotation_high",                 # Column name for cell type labels
     trim_rate=0.05,                        # Trim rate for robust mean calculation

@@ -36,7 +36,7 @@ if not project_dir.is_dir():
     )
 
 _generated_input_paths = {
-    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Merged_WO_integration" / "Sin_GT" / "Seurat_merged.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Merged_WO_integration" / "Sin_GT" / "Seurat_merged_Integration_Methods.h5ad",
     project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "scVI" / "Sin_GT_With_Python" / "Suplementaria_S2_scVI_state1.h5ad",
     project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Harmony" / "Sin_GT" / "Seurat_harmony.h5ad",
     project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "LIGER" / "Sin_GT" / "Seurat_liger.h5ad",
@@ -98,7 +98,7 @@ label_key = "manual_celltype_annotation_high"
 
 methods = {
     "Merged": {
-        "path": _input_path(project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Merged_WO_integration" / "Sin_GT", "Seurat_merged.h5ad"),
+        "path": _input_path(project_dir / "Resultados" / "Joined_datasets" / "Integration_methods_lab" / "Merged_WO_integration" / "Sin_GT", "Seurat_merged_Integration_Methods.h5ad"),
         "source_embedding": "X_pca_wo_integ",
         "target_embedding": "X_Merged",
     },

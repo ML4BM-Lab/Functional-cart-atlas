@@ -87,7 +87,7 @@ if (!nzchar(python_path) || !file.exists(python_path)) {
 }
 
 .generated_input_paths <- c(
-    file.path(project_dir, "Resultados", "CD8_IP_comparison", "Final_filtered.RDS")
+    file.path(project_dir, "Resultados", "IP_comparison", "Final_filtered.RDS")
 )
 
 .input_path <- function(directory, ...) {
@@ -144,7 +144,7 @@ set.seed(2504)
 ###############################################################################
 
 ## Read files
-.current_dir <- file.path(project_dir, "Resultados", "CD8_IP_comparison")
+.current_dir <- file.path(project_dir, "Resultados", "IP_comparison")
 Final_result_2D <- readRDS(.input_path(.current_dir, "Final_filtered.RDS")) # This object comes from "Dreamlet_IP_comparison.R" script
 
 ###############################################################################

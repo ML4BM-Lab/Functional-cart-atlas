@@ -36,7 +36,7 @@ if not project_dir.is_dir():
     )
 
 _generated_input_paths = {
-    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5" / "Seurat_merged_With_Celltypist.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5" / "Seurat_merged_With_Celltypist_V5.h5ad",
     project_dir / "Resultados" / "Joined_datasets" / "Raw_Atlas" / "Atlas_integ_scArches_FINAL_V5.h5ad",
 }
 
@@ -69,7 +69,7 @@ import numpy as np
 jordana_dir = project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V5"
 
 adata_Jordana = sc.read_h5ad(
-    _input_path(jordana_dir, "Seurat_merged_With_Celltypist.h5ad")
+    _input_path(jordana_dir, "Seurat_merged_With_Celltypist_V5.h5ad")
 )
 
 adata_Jordana = adata_Jordana[

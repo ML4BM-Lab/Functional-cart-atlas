@@ -36,7 +36,7 @@ if not project_dir.is_dir():
     )
 
 _generated_input_paths = {
-    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V4" / "Seurat_merged_With_Celltypist.h5ad",
+    project_dir / "Resultados" / "Joined_datasets" / "Integration" / "Python-Celltypist" / "V4" / "Seurat_merged_With_Celltypist_V4.h5ad",
 }
 
 def _require_path(path):
@@ -75,7 +75,7 @@ First_Time = True
 _current_dir = Path(project_dir / 'Resultados' / 'Joined_datasets' / 'Integration' / 'Python-Celltypist' / 'V4')
 if First_Time:
     adata = sc.read(
-        _input_path(_current_dir, "Seurat_merged_With_Celltypist.h5ad")
+        _input_path(_current_dir, "Seurat_merged_With_Celltypist_V4.h5ad")
     )
     adata.layers["counts"] = adata.X.copy()
     ## Normalize and log scale

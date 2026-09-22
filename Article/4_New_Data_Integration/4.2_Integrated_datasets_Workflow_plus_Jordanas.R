@@ -90,7 +90,7 @@ if (!dir.exists(project_dir)) {
     file.path(project_dir, "Resultados", "Haradvala_et_al", "RDS", "Normalized_CellRanger_Haradvala_RDS.rds"),
     file.path(project_dir, "Resultados", "Li_X_Cancer_Cell_letter_et_al", "RDS", "Normalized_CellRanger_Li_X_letter_RDS.rds"),
     file.path(project_dir, "Resultados", "Jordana_et_al", "RDS", "Normalized_CellRanger_Jordana_RDS.rds"),
-    file.path(project_dir, "Resultados", "Joined_datasets", "Integration", "Python-Celltypist", "V5", "celltypist_metadata_table.csv")
+    file.path(project_dir, "Resultados", "Joined_datasets", "Integration", "Python-Celltypist", "V5", "celltypist_metadata_table_V5.csv")
 )
 
 .input_path <- function(directory, ...) {
@@ -541,11 +541,11 @@ if (Create_h5ad) {
     # Here I remove unnecesary slots that produce some errors in Python
     Seurat_merged2 <- CreateSeuratObject(Seurat_merged$RNA@counts)
     Seurat_merged2@meta.data <- Seurat_merged@meta.data
-    SaveH5Seurat(Seurat_merged2, filename = .output_path(.current_dir, "Seurat_merged.h5Seurat"))
-    Convert(.input_path(.current_dir, "Seurat_merged.h5Seurat"), dest = "h5ad")
+    SaveH5Seurat(Seurat_merged2, filename = .output_path(.current_dir, "Seurat_merged_V5.h5Seurat"))
+    Convert(.input_path(.current_dir, "Seurat_merged_V5.h5Seurat"), dest = "h5ad")
     print("Saved successfully")
 } else {
-    load_Seurat_merged <- LoadH5Seurat(.input_path(.current_dir, "Seurat_merged.h5Seurat"))
+    load_Seurat_merged <- LoadH5Seurat(.input_path(.current_dir, "Seurat_merged_V5.h5Seurat"))
     Seurat_merged <- load_Seurat_merged
     rm(load_Seurat_merged)
     print("Loaded successfully")
@@ -558,7 +558,7 @@ if (Create_h5ad) {
 
 ## Load and add metadata obtained with celltypist
 .current_dir <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration", "Python-Celltypist", "V5")
-celltypist_metadata <- read.csv(file = .input_path(.current_dir, "celltypist_metadata_table.csv"), row.names = 1)
+celltypist_metadata <- read.csv(file = .input_path(.current_dir, "celltypist_metadata_table_V5.csv"), row.names = 1)
 celltypist_metadata <- celltypist_metadata %>%
     dplyr::select("predicted_labels", "over_clustering", "majority_voting", "conf_score") %>%
     rename_with(~ paste0("celltypist_", .), everything())
@@ -574,8 +574,8 @@ dev.off()
 ## Save again h5ad object to include celltypist data
 Seurat_merged3 <- CreateSeuratObject(Seurat_merged$RNA@counts)
 Seurat_merged3@meta.data <- Seurat_merged@meta.data
-SaveH5Seurat(Seurat_merged3, filename = .output_path(.current_dir, "Seurat_merged_With_Celltypist.h5Seurat"))
-Convert(.input_path(.current_dir, "Seurat_merged_With_Celltypist.h5Seurat"), dest = "h5ad")
+SaveH5Seurat(Seurat_merged3, filename = .output_path(.current_dir, "Seurat_merged_With_Celltypist_V5.h5Seurat"))
+Convert(.input_path(.current_dir, "Seurat_merged_With_Celltypist_V5.h5Seurat"), dest = "h5ad")
 
 ## Save state 2 in RDS
 saveRDS(Seurat_merged, .output_path(project_dir, "Resultados", "Joined_datasets", "Integration", "RDS", "WO_integ", "V5", "Seurat_merged_WO_integ_state2.RDS"))

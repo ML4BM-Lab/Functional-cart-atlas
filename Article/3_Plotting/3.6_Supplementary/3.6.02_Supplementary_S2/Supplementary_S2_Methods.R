@@ -303,7 +303,7 @@ if (Primera_vez) {
 
 
     # Set path
-    path_base <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Merged_WO_integration", "Sin_GT", "Seurat_merged")
+    path_base <- file.path(project_dir, "Resultados", "Joined_datasets", "Integration_methods_lab", "Merged_WO_integration", "Sin_GT", "Seurat_merged_Integration_Methods")
 
     # Save .h5Seurat
     SaveH5Seurat(Seurat_merged, filename = paste0(path_base, ".h5Seurat"))
