@@ -343,6 +343,7 @@ percentage_table <- as.data.frame(colData(filtered_sce2)) %>%
   ungroup()
 
 percentage_table
+write.csv(percentage_table, .output_path(file.path(project_dir, "Resultados_Figuras", "Data"), "Supplementary_S8F_Percentages.csv"), row.names = FALSE)
 
 table_wide <- percentage_table %>%
   tidyr::pivot_wider(
@@ -353,6 +354,7 @@ table_wide <- percentage_table %>%
   )
 
 table_wide
+write.csv(table_wide, .output_path(file.path(project_dir, "Resultados_Figuras", "Data"), "Supplementary_S8F_Percentages_Wide.csv"), row.names = FALSE)
 
 ## This data was used to generate the final figure using Graphpad Prism 8
 

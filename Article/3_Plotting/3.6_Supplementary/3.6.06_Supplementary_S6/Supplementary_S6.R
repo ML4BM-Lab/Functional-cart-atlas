@@ -321,7 +321,7 @@ res.zenith_filtrado_Custom <- res.zenith_Niveles_Custom %>%
 ## Merge
 Baseline <- rbind(res.zenith_filtrado_GOBP, res.zenith_filtrado_KEGG, res.zenith_filtrado_Reactome, res.zenith_filtrado_WikiPathway, res.zenith_filtrado_Custom)
 
-Baseline_Summarized <- Baseline %>% dplyr::select(c("assay", ,"coef", "Geneset", "delta"))
+Baseline_Summarized <- Baseline %>% dplyr::select(c("assay", "coef", "Geneset", "delta"))
 
 ## Final results and comparisons
 Baseline_Summarized_FINAL <- Baseline_Summarized[Baseline_Summarized$assay=="[<2_weeks]_vs_[Infusion_Product]",]
@@ -344,6 +344,32 @@ Final_result_orig[Final_result_orig$Geneset=="ER493_Cytoplasmic_Ribosomal_Protei
 Final_result_orig[Final_result_orig$Geneset=="ER450_Cancer_Immunotherapy_By_PD_1_Blockade_WP4585",]
 Final_result_orig[Final_result_orig$Geneset=="ER65_TNF_Related_Weak_Inducer_Of_Apoptosis_TWEAK_Signaling_Pathway_WP2036",]
 Final_result_orig[Final_result_orig$Geneset=="Genes Prolif",]
+
+result_dir <- file.path(project_dir, "Resultados_Figuras", "Data")
+write.csv(Baseline_Summarized, .output_path(result_dir, "Supplementary_S6_Baseline.csv"), row.names = FALSE)
+write.csv(Baseline_Summarized_FINAL, .output_path(result_dir, "Supplementary_S6_Baseline_FINAL.csv"), row.names = FALSE)
+selected_genesets <- c(
+  "ER856_Cytoplasmic_Translation_(GO0002181)",
+  "ER1707_Mitochondrial_Gene_Expression_(GO0140053)",
+  "ER4954_Response_To_Interferon-Beta_(GO0035456)",
+  "ER3628_Protein_Dephosphorylation_(GO0006470)",
+  "ER2701_Phosphatidylinositol-Mediated_Signaling_(GO0048015)",
+  "ER229_Proteasome",
+  "ER111_Glycolysis__Gluconeogenesis",
+  "ER68_Cysteine_and_methionine_metabolism",
+  "ER1412_SRP-dependent_Cotranslational_Protein_Targeting_To_Membrane_R-HSA-1799339",
+  "ER1188_RAC1_GTPase_Cycle_R-HSA-9013149",
+  "ER712_Immunoregulatory_Interactions_Between_A_Lymphoid_And_A_non-Lymphoid_Cell_R-HSA-198933",
+  "ER493_Cytoplasmic_Ribosomal_Proteins_WP477",
+  "ER450_Cancer_Immunotherapy_By_PD_1_Blockade_WP4585",
+  "ER65_TNF_Related_Weak_Inducer_Of_Apoptosis_TWEAK_Signaling_Pathway_WP2036",
+  "Genes Prolif"
+)
+write.csv(
+  Final_result_orig[Final_result_orig$Geneset %in% selected_genesets, , drop = FALSE],
+  .output_path(result_dir, "Supplementary_S6_Selected_Deltas.csv"),
+  row.names = FALSE
+)
 
 ##### NOTE: Final graphs in figure have been done using the data from here in GraphPad Prism 8 #####
 

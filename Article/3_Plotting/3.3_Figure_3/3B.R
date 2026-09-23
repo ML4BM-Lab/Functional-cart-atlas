@@ -287,7 +287,7 @@ res.zenith_filtrado_Custom <- res.zenith_Niveles_Custom %>%
 ## Merge
 Baseline <- rbind(res.zenith_filtrado_GOBP, res.zenith_filtrado_Reactome, res.zenith_filtrado_Custom)
 
-Baseline_Summarized <- Baseline %>% dplyr::select(c("assay", ,"coef", "Geneset", "delta", "se"))
+Baseline_Summarized <- Baseline %>% dplyr::select(c("assay", "coef", "Geneset", "delta", "se"))
 
 ## Final results and comparisons
 Baseline_Summarized_FINAL <- Baseline_Summarized[Baseline_Summarized$assay=="[<2_weeks]_vs_[Infusion_Product]",]
@@ -299,6 +299,21 @@ Final_result_orig[Final_result_orig$Geneset=="Cytotoxicity",]
 Final_result_orig[Final_result_orig$Geneset=="ER1439_Selenocysteine_Synthesis_R-HSA-2408557",]
 Final_result_orig[Final_result_orig$Geneset=="ER231_T_Cell_Receptor_Signaling_Pathway_(GO0050852)",]
 Final_result_orig[Final_result_orig$Geneset=="ER781_Cholesterol_Biosynthetic_Process_(GO0006695)",]
+
+result_dir <- file.path(project_dir, "Resultados_Figuras", "Data")
+write.csv(Baseline_Summarized, .output_path(result_dir, "Figure_3B_Baseline.csv"), row.names = FALSE)
+write.csv(Baseline_Summarized_FINAL, .output_path(result_dir, "Figure_3B_Baseline_FINAL.csv"), row.names = FALSE)
+selected_genesets <- c(
+  "Cytotoxicity",
+  "ER1439_Selenocysteine_Synthesis_R-HSA-2408557",
+  "ER231_T_Cell_Receptor_Signaling_Pathway_(GO0050852)",
+  "ER781_Cholesterol_Biosynthetic_Process_(GO0006695)"
+)
+write.csv(
+  Final_result_orig[Final_result_orig$Geneset %in% selected_genesets, , drop = FALSE],
+  .output_path(result_dir, "Figure_3B_Selected_Deltas.csv"),
+  row.names = FALSE
+)
 
 ##### NOTE: Final graph in figure has been done using the data from here in GraphPad Prism 8 #####
 

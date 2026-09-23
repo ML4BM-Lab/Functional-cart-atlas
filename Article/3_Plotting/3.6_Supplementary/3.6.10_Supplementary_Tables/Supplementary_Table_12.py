@@ -157,5 +157,9 @@ for gene in Genes_IACs_clusters:
 results_df = pd.DataFrame(results)
 results_df["Significance"] = results_df["p-value"].apply(get_significance)
 print(results_df)
+results_df.to_csv(
+    _output_path(project_dir / "Resultados_Figuras" / "Data", "Supplementary_Table_12.csv"),
+    index=False,
+)
 
 # %% End of script

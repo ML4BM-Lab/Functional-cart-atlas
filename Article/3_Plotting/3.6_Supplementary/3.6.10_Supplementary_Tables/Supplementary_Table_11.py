@@ -130,6 +130,10 @@ patient_info = patient_info[~patient_info["ICANS_Grade_Range"].isin([0, "0"])]
 
 print("\nTable patient-level:")
 print(patient_info)
+patient_info.to_csv(
+    _output_path(project_dir / "Resultados_Figuras" / "Data", "Supplementary_Table_11_Patients.csv"),
+    index_label="Norm_Patient_Name",
+)
 
 # %% Define groups of ICANS grade (1–2 vs 3–4)
 icans_str = patient_info["ICANS_Grade_Range"].astype(str)
@@ -171,5 +175,25 @@ if len(low) > 0 and len(high) > 0:
     print("\nFold-change comparisons:")
     print("  Median fold-change (3-4 vs 1-2):", fold_median)
     print("  Mean fold-change (3-4 vs 1-2):", fold_mean)
+
+    pd.DataFrame([{
+        "U_Statistic": stat,
+        "P_Value": p_wilcoxon,
+        "N_1_2": len(low),
+        "N_3_4": len(high),
+        "Median_1_2": median_low,
+        "Median_3_4": median_high,
+        "Mean_1_2": mean_low,
+        "Mean_3_4": mean_high,
+        "Range_1_2_Min": range_low[0],
+        "Range_1_2_Max": range_low[1],
+        "Range_3_4_Min": range_high[0],
+        "Range_3_4_Max": range_high[1],
+        "Median_Fold_Change": fold_median,
+        "Mean_Fold_Change": fold_mean,
+    }]).to_csv(
+        _output_path(project_dir / "Resultados_Figuras" / "Data", "Supplementary_Table_11_Wilcoxon.csv"),
+        index=False,
+    )
 
 # %% End of script

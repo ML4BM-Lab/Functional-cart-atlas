@@ -196,7 +196,7 @@ wilcoxon_results %>%
   dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance) %>%
   print(n = Inf, width = Inf)
 
-if (FALSE) {
+if (TRUE) {
   write.csv(
     wilcoxon_results %>%
       dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance),

@@ -205,6 +205,9 @@ meta$Time_Point_Ranges <- factor(
 # Create counts table
 tabla_conteos <- table(meta$Max_Response, meta$Time_Point_Ranges)
 tabla_conteos
+counts_S5A <- as.data.frame(tabla_conteos)
+colnames(counts_S5A) <- c("Max_Response", "Time_Point_Ranges", "Cell_Count")
+write.csv(counts_S5A, .output_path(file.path(project_dir, "Resultados_Figuras", "Data"), "Supplementary_S5A_Cell_Counts.csv"), row.names = FALSE)
 
 ## NOTE: With this data final figure was done using Graphpad Prism 8
 

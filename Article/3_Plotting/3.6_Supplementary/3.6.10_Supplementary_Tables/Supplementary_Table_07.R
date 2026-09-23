@@ -235,6 +235,16 @@ fisher_results <- fisher_results[!sapply(fisher_results, is.null)]
 # Print results
 fisher_results
 
+fisher_table <- do.call(rbind, lapply(fisher_results, function(result) {
+  data.frame(
+    Cell_Type = result$cell_type,
+    as.data.frame(as.table(result$contingency_table)),
+    Odds_Ratio = unname(result$odds_ratio),
+    P_Value = result$p_value
+  )
+}))
+write.csv(fisher_table, .output_path(file.path(project_dir, "Resultados_Figuras", "Data"), "Supplementary_Table_7.csv"), row.names = FALSE)
+
 ################################
 ######## END OF SCRIPT #########
 ################################

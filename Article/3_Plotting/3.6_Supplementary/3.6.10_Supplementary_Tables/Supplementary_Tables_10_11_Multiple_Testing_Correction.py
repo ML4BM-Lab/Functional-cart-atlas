@@ -62,6 +62,11 @@ def _input_path(directory, filename):
     raise FileNotFoundError(f"Required input path does not exist: {path}")
 
 
+def _output_path(directory, filename):
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
+
+
 # %% Import libraries
 import numpy as np
 import pandas as pd
@@ -198,5 +203,9 @@ results = pd.DataFrame(
 
 # %% Report
 print(results.to_string(index=False))
+results.to_csv(
+    _output_path(project_dir / "Resultados_Figuras" / "Data", "Supplementary_Tables_10_11_BH_Correction.csv"),
+    index=False,
+)
 
 # %% End of script

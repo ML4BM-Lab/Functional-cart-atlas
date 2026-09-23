@@ -236,6 +236,16 @@ fisher_results <- fisher_results[!sapply(fisher_results, is.null)]
 # Print results
 fisher_results
 
+fisher_table <- do.call(rbind, lapply(fisher_results, function(result) {
+  data.frame(
+    Cell_Type = result$cell_type,
+    as.data.frame(as.table(result$contingency_table)),
+    Odds_Ratio = unname(result$odds_ratio),
+    P_Value = result$p_value
+  )
+}))
+write.csv(fisher_table, .output_path(file.path(project_dir, "Resultados_Figuras", "Data"), "Figure_2G_Fisher.csv"), row.names = FALSE)
+
 tab <- fisher_results[[1]]$contingency_table
 totals <- colSums(tab)
 
@@ -244,6 +254,12 @@ perc_NR <- tab["TRUE", "NR"] / totals["NR"] * 100
 
 print(perc_CR)
 print(perc_NR)
+
+write.csv(
+  data.frame(Cell_Type = fisher_results[[1]]$cell_type, Response = c("CR", "NR"), IL10_Positive_Percent = c(perc_CR, perc_NR)),
+  .output_path(file.path(project_dir, "Resultados_Figuras", "Data"), "Figure_2G_Percentages.csv"),
+  row.names = FALSE
+)
 
 ##### NOTE: Final graph in figure has been done using the data from here in GraphPad Prism 8 #####
 

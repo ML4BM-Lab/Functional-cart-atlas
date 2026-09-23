@@ -167,4 +167,22 @@ print("\nOdds ratio:", oddsratio)
 print("95% CI:", ci.low, "-", ci.high)
 print("p-value:", p_value)
 
+# %% Save supplementary table data
+output_dir = project_dir / "Resultados_Figuras" / "Data"
+contingency_table.to_csv(
+    _output_path(output_dir, "Supplementary_Table_10_Contingency.csv"),
+    index_label="ICANS_Grade_Range",
+)
+pd.DataFrame(
+    table_2x2,
+    index=["IAC Yes", "IAC No"],
+    columns=["Severe ICANS", "Mild ICANS"],
+).to_csv(_output_path(output_dir, "Supplementary_Table_10_Fisher_2x2.csv"), index_label="IACs")
+pd.DataFrame([{
+    "Odds_Ratio": oddsratio,
+    "OR_95_CI_Low": ci.low,
+    "OR_95_CI_High": ci.high,
+    "P_Value": p_value,
+}]).to_csv(_output_path(output_dir, "Supplementary_Table_10_Fisher.csv"), index=False)
+
 # %% End of script
