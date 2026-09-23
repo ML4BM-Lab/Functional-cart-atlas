@@ -208,7 +208,7 @@ perform_fisher_test <- function(cell_type) {
   # Ensure the table is 2x2 (force missing rows/columns to be zero)
   if (!all(c(TRUE, FALSE) %in% rownames(contingency_table))) {
     full_table <- matrix(0, nrow = 2, ncol = 2,
-                         dimnames = list(c(FALSE, TRUE), expected_levels))
+                         dimnames = list(IL10_expr = c(FALSE, TRUE), Response = expected_levels))
     full_table[rownames(contingency_table), ] <- contingency_table
     contingency_table <- full_table
   }

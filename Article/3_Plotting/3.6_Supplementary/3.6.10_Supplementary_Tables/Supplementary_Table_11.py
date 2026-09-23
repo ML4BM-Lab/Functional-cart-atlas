@@ -175,7 +175,6 @@ if len(low) > 0 and len(high) > 0:
     print("\nFold-change comparisons:")
     print("  Median fold-change (3-4 vs 1-2):", fold_median)
     print("  Mean fold-change (3-4 vs 1-2):", fold_mean)
-
     pd.DataFrame([{
         "U_Statistic": stat,
         "P_Value": p_wilcoxon,

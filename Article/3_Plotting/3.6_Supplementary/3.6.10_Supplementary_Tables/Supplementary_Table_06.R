@@ -200,7 +200,7 @@ if (TRUE) {
   write.csv(
     wilcoxon_results %>%
       dplyr::select(Cell_Type, N_NR, N_CR, NR_median, CR_median, delta_median, p_value, p_adj, Significance),
-    file = .output_path(.current_dir, "Supplementary_Table_6.csv"),
+    file = .output_path(file.path(project_dir, "Resultados_Figuras", "Data"), "Supplementary_Table_6.csv"),
     row.names = FALSE
   )
 }
