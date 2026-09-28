@@ -345,9 +345,11 @@ gs <- unique(res.zenith$Geneset[res.zenith$FDR < 0.05])
 df <- res.zenith[res.zenith$Geneset %in% gs, ]
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Biological_Process_2.pdf"), width = 10, height = 10)
-plotZenithResults(df, Inf, Inf)
-dev.off()
+if (length(unique(df$Geneset[!is.na(df$Geneset)])) >= 2L) {
+  cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Biological_Process_2.pdf"), width = 10, height = 10)
+  print(plotZenithResults(df, Inf, Inf))
+  dev.off()
+}
 
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
@@ -379,9 +381,11 @@ gs <- unique(res.zenith$Geneset[res.zenith$FDR < 0.05])
 df <- res.zenith[res.zenith$Geneset %in% gs, ]
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_KEGG_2021_Human_2.pdf"), width = 10, height = 10)
-plotZenithResults(df, Inf, Inf)
-dev.off()
+if (length(unique(df$Geneset[!is.na(df$Geneset)])) >= 2L) {
+  cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_KEGG_2021_Human_2.pdf"), width = 10, height = 10)
+  print(plotZenithResults(df, Inf, Inf))
+  dev.off()
+}
 
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
@@ -413,9 +417,11 @@ gs <- unique(res.zenith$Geneset[res.zenith$FDR < 0.05])
 df <- res.zenith[res.zenith$Geneset %in% gs, ]
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Reactome_2022_2.pdf"), width = 10, height = 10)
-plotZenithResults(df, Inf, Inf)
-dev.off()
+if (length(unique(df$Geneset[!is.na(df$Geneset)])) >= 2L) {
+  cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_Reactome_2022_2.pdf"), width = 10, height = 10)
+  print(plotZenithResults(df, Inf, Inf))
+  dev.off()
+}
 
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
@@ -447,9 +453,11 @@ gs <- unique(res.zenith$Geneset[res.zenith$FDR < 0.05])
 df <- res.zenith[res.zenith$Geneset %in% gs, ]
 
 # plot results, but with no limit based on the highest/lowest t-statistic
-cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_WikiPathway_2023_Human_2.pdf"), width = 10, height = 10)
-plotZenithResults(df, Inf, Inf)
-dev.off()
+if (length(unique(df$Geneset[!is.na(df$Geneset)])) >= 2L) {
+  cairo_pdf(.output_path(.current_dir, "BCMA_vs_CD19_MID_WikiPathway_2023_Human_2.pdf"), width = 10, height = 10)
+  print(plotZenithResults(df, Inf, Inf))
+  dev.off()
+}
 
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
