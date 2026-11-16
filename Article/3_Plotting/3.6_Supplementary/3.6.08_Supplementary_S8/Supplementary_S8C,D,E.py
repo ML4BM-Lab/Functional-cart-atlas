@@ -244,9 +244,9 @@ output_dir = (
 # %% Create stacked violins
 
 exact_group_mapping = {
-    "CD8 cytotoxic": "Classified CD8",
-    "CD4 central memory": "Classified CD4",
-    "Proliferative T cells": "Classified Prolif",
+    "CD8 cytotoxic": "Manual CD8",
+    "CD4 central memory": "Manual CD4",
+    "Proliferative T cells": "Manual Prolif",
 }
 
 # Split the incorrect predictions by Jordana's broad annotation.  The short
@@ -254,16 +254,16 @@ exact_group_mapping = {
 # comparison["Jordanas_Broad"].
 incorrect_group_mapping = {
     "CD8 cytotoxic": [
-        ("Classified CD4", "CD4"),
-        ("Classified Prolif", "Proliferative"),
+        ("Manual CD4", "CD4"),
+        ("Manual Prolif", "Proliferative"),
     ],
     "CD4 central memory": [
-        ("Classified CD8", "CD8"),
-        ("Classified Prolif", "Proliferative"),
+        ("Manual CD8", "CD8"),
+        ("Manual Prolif", "Proliferative"),
     ],
     "Proliferative T cells": [
-        ("Classified CD8", "CD8"),
-        ("Classified CD4", "CD4"),
+        ("Manual CD8", "CD8"),
+        ("Manual CD4", "CD4"),
     ],
 }
 
