@@ -73,6 +73,10 @@ Existing files, directories, symbolic links, and their contents are never
 deleted, moved, renamed, or overwritten. It creates the required directory
 structure but does not create or download any input data files.
 
+## 🖥️ Memory requirements
+
+We recommend **at least 160 GB of RAM** for the most demanding analyses in `Article/3_Plotting/` when using the **full atlas**. However, **80 GB of RAM should be sufficient for most scripts**.
+
 ## 🐳 Docker
 
 The analyses were run on two workstations, referred to throughout this
