@@ -167,23 +167,24 @@ plt.savefig(_output_path(figures_dir, "Figura_S7Ba.pdf"))
 plt.show()
 
 # %% S7Bb - Artificial doublets vs IACs
-adataB = adata_orig.copy()
-
-## Normalize and log data
-# 1. Normalize total counts per cell
-sc.pp.normalize_total(adataB, target_sum=1e4)
-
-# 2. Log-transform the data
-sc.pp.log1p(adataB)
-
-# 3. Optionally, set raw to keep a copy of the normalized data
-adataB.raw = adataB
+adataB = sc.read_h5ad(_input_path(data_dir, "Python_scVI_adata_big_V4_state4.h5ad"))
 
 # Select raw count matrix
 if "counts" in adataB.layers:
     X = adataB.layers["counts"]
 else:
-    X = adataB.raw.X
+    X = adataB.X
+
+values = X.data if sp.issparse(X) else np.asarray(X).ravel()
+for start in range(0, values.size, 4_000_000):
+    block = values[start:start + 4_000_000]
+    if not np.isfinite(block).all() or (block < 0).any() or (block != np.rint(block)).any():
+        raise ValueError("Input counts must be finite, nonnegative integers.")
+cell_totals = np.asarray(X.sum(axis=1)).ravel()
+if (cell_totals <= 0).any():
+    raise ValueError("Input counts contain empty cells.")
+if "nCount_RNA" in adataB.obs and not np.array_equal(cell_totals, adataB.obs["nCount_RNA"]):
+    raise ValueError("Input counts do not match nCount_RNA.")
 
 print("Matrix used for doublets: (cells x genes):", X.shape)
 
@@ -192,8 +193,10 @@ adata_IACs   = adataB[adataB.obs["manual_celltype_annotation_high"] == "Monocyte
 adata_noIACs = adataB[adataB.obs["manual_celltype_annotation_high"] != "Monocyte-like T cells"].copy()
 
 # Extract matrix
-X_IACs   = adata_IACs.layers["counts"] if "counts" in adata_IACs.layers else adata_IACs.raw.X
-X_noIACs = adata_noIACs.layers["counts"] if "counts" in adata_noIACs.layers else adata_noIACs.raw.X
+X_IACs   = adata_IACs.layers["counts"] if "counts" in adata_IACs.layers else adata_IACs.X
+X_noIACs = adata_noIACs.layers["counts"] if "counts" in adata_noIACs.layers else adata_noIACs.X
+
+adata_IACs.X = X_IACs.copy()
 
 print("IACs matrix shape:", X_IACs.shape)      # (n_IAC_cells, n_genes)
 print("No-IACs matrix shape:", X_noIACs.shape) # (n_noIAC_cells, n_genes)
@@ -234,12 +237,19 @@ adata_IACs.obs["Group"] = "IACs"
 
 # Combine IACs + Doublets
 adata_comb = ad.concat([adata_IACs, adata_doublets], axis=0, join="outer")
+if not adata_comb.var_names.equals(adataB.var_names):
+    raise ValueError("Gene order changed during concatenation.")
+if (sp.csr_matrix(adata_comb.X[:adata_IACs.n_obs]) != sp.csr_matrix(X_IACs)).nnz:
+    raise ValueError("IAC counts changed during concatenation.")
+if (sp.csr_matrix(adata_comb.X[adata_IACs.n_obs:]) != doublets_matrix).nnz:
+    raise ValueError("Doublet counts changed during concatenation.")
 print("Combined shape:", adata_comb.shape)
 
 # Proprocess + UMAP
+adata_comb.layers["counts"] = adata_comb.X.copy()
 sc.pp.normalize_total(adata_comb, target_sum=1e4)
 sc.pp.log1p(adata_comb)
-sc.pp.highly_variable_genes(adata_comb, n_top_genes=3000, flavor="seurat_v3")
+sc.pp.highly_variable_genes(adata_comb, n_top_genes=3000, flavor="seurat_v3", layer="counts", span=0.35)
 adata_comb = adata_comb[:, adata_comb.var["highly_variable"]].copy()
 
 sc.pp.scale(adata_comb, max_value=10)
