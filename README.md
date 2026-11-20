@@ -75,7 +75,7 @@ structure but does not create or download any input data files.
 
 ## 🖥️ Memory requirements
 
-We recommend **at least 160 GB of RAM** for the most demanding analyses in `Article/3_Plotting/` when using the **full atlas**. However, **80 GB of RAM should be sufficient for most scripts**.
+We recommend **at least 160 GB of RAM** for the most demanding analyses when using the **full atlas**. However, **80 GB of RAM should be sufficient for most scripts**.
 
 ## 🐳 Docker
 
